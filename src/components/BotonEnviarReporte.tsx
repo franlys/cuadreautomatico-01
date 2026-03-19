@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { exportarPDF, exportarXLSX } from '../utils/exportador';
 import type { SemanaLaboral, FolderDiario, Registro } from '../types';
 
 interface BotonEnviarReporteProps {
@@ -10,9 +12,9 @@ interface BotonEnviarReporteProps {
 }
 
 export function BotonEnviarReporte({
-  semana: _semana,
-  folders: _folders,
-  registros: _registros,
+  semana,
+  folders,
+  registros,
   destinatarioEmail,
   destinatarioWhatsApp,
 }: BotonEnviarReporteProps) {
@@ -29,9 +31,76 @@ export function BotonEnviarReporte({
       setError(null);
       setResultado(null);
 
-      // TODO: Implementar generación de Blob para envío por email
-      // Por ahora, las funciones exportarPDF y exportarXLSX solo descargan archivos
-      throw new Error('Funcionalidad de envío de reporte por correo temporalmente deshabilitada. Use la exportación manual.');
+      // Generar PDF (sin descargar)
+      const pdfBlob = exportarPDF(
+        {
+          semana,
+          folders,
+          registrosPorFolder: registros.reduce((acc, r) => {
+            if (!acc[r.folder_diario_id]) acc[r.folder_diario_id] = [];
+            acc[r.folder_diario_id].push(r);
+            return acc;
+          }, {} as Record<string, Registro[]>),
+        },
+        'Dueño',
+        false // No descargar, solo generar Blob
+      );
+
+      // Generar XLSX (sin descargar)
+      const xlsxBlob = exportarXLSX(
+        {
+          semana,
+          folders,
+          registrosPorFolder: registros.reduce((acc, r) => {
+            if (!acc[r.folder_diario_id]) acc[r.folder_diario_id] = [];
+            acc[r.folder_diario_id].push(r);
+            return acc;
+          }, {} as Record<string, Registro[]>),
+        },
+        'Dueño',
+        false // No descargar, solo generar Blob
+      );
+
+      // Convertir blobs a base64
+      const pdfBase64 = await blobToBase64(pdfBlob);
+      const xlsxBase64 = await blobToBase64(xlsxBlob);
+
+      // Llamar a la Edge Function
+      const { data, error: invokeError } = await supabase.functions.invoke('notificador', {
+        body: {
+          semana_id: semana.id,
+          destinatario_email: destinatarioEmail,
+          destinatario_whatsapp: destinatarioWhatsApp || '',
+          pdf_base64: pdfBase64,
+          xlsx_base64: xlsxBase64,
+          incluir_evidencias: false,
+        },
+      });
+
+      if (invokeError) {
+        throw new Error(`Error al invocar función: ${invokeError.message}`);
+      }
+
+      if (!data.success) {
+        throw new Error('Error al enviar reporte');
+      }
+
+      // Guardar resultado
+      setResultado({
+        email: data.email,
+        whatsapp: data.whatsapp,
+      });
+
+      // Mostrar mensaje de éxito
+      if (data.email.success && data.whatsapp.success) {
+        alert('✅ Reporte enviado exitosamente por correo y WhatsApp');
+      } else if (data.email.success) {
+        alert('✅ Reporte enviado por correo\n⚠️ Error en WhatsApp: ' + data.whatsapp.message);
+      } else if (data.whatsapp.success) {
+        alert('⚠️ Error en correo: ' + data.email.message + '\n✅ Reporte enviado por WhatsApp');
+      } else {
+        alert('❌ Error al enviar reporte:\nCorreo: ' + data.email.message + '\nWhatsApp: ' + data.whatsapp.message);
+      }
     } catch (err: any) {
       console.error('Error al enviar reporte:', err);
       setError(err.message);
@@ -133,4 +202,19 @@ export function BotonEnviarReporte({
       </div>
     </div>
   );
+}
+
+// Función auxiliar para convertir Blob a Base64
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      // Remover el prefijo "data:application/...;base64,"
+      const base64Data = base64.split(',')[1];
+      resolve(base64Data);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }

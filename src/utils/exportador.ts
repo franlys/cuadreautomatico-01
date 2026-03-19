@@ -17,8 +17,9 @@ interface DatosExportacion {
 
 /**
  * Exporta el reporte semanal a PDF
+ * @param descargar - Si es true, descarga el archivo. Si es false, solo retorna el Blob
  */
-export function exportarPDF(datos: DatosExportacion, rol: string): void {
+export function exportarPDF(datos: DatosExportacion, rol: string, descargar: boolean = true): Blob {
   try {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -151,10 +152,16 @@ export function exportarPDF(datos: DatosExportacion, rol: string): void {
       });
     }
     
-    // Guardar PDF
-    const nombreArchivo = `reporte_${datos.semana.fecha_inicio}_${datos.semana.fecha_fin}.pdf`;
-    doc.save(nombreArchivo);
+    // Generar Blob
+    const pdfBlob = doc.output('blob');
     
+    // Descargar si se solicita
+    if (descargar) {
+      const nombreArchivo = `reporte_${datos.semana.fecha_inicio}_${datos.semana.fecha_fin}.pdf`;
+      doc.save(nombreArchivo);
+    }
+    
+    return pdfBlob;
   } catch (error) {
     console.error('Error al generar PDF:', error);
     throw new Error('No se pudo generar el archivo PDF');
@@ -163,8 +170,9 @@ export function exportarPDF(datos: DatosExportacion, rol: string): void {
 
 /**
  * Exporta el reporte semanal a XLSX
+ * @param descargar - Si es true, descarga el archivo. Si es false, solo retorna el Blob
  */
-export function exportarXLSX(datos: DatosExportacion, rol: string): void {
+export function exportarXLSX(datos: DatosExportacion, rol: string, descargar: boolean = true): Blob {
   try {
     const workbook = XLSX.utils.book_new();
     
@@ -240,10 +248,17 @@ export function exportarXLSX(datos: DatosExportacion, rol: string): void {
       XLSX.utils.book_append_sheet(workbook, wsDepositos, 'Depósitos');
     }
     
-    // Guardar XLSX
-    const nombreArchivo = `reporte_${datos.semana.fecha_inicio}_${datos.semana.fecha_fin}.xlsx`;
-    XLSX.writeFile(workbook, nombreArchivo);
+    // Generar Blob
+    const xlsxBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const xlsxBlob = new Blob([xlsxBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     
+    // Descargar si se solicita
+    if (descargar) {
+      const nombreArchivo = `reporte_${datos.semana.fecha_inicio}_${datos.semana.fecha_fin}.xlsx`;
+      XLSX.writeFile(workbook, nombreArchivo);
+    }
+    
+    return xlsxBlob;
   } catch (error) {
     console.error('Error al generar XLSX:', error);
     throw new Error('No se pudo generar el archivo XLSX');
