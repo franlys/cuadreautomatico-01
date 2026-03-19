@@ -25,19 +25,43 @@ export function FormularioRegistro({ tipo, onRegistroCreado }: FormularioRegistr
   const [error, setError] = useState<string | null>(null);
   const [errores, setErrores] = useState<Record<string, string>>({});
 
+  const esPagoNomina = concepto.toLowerCase().includes('nómina') || concepto.toLowerCase().includes('nomina');
+
   const validarFormulario = (): boolean => {
     const nuevosErrores: Record<string, string> = {};
 
-    if (!concepto.trim()) {
-      nuevosErrores.concepto = 'El concepto es requerido';
+    // Ingresos: NO llevan concepto
+    if (tipo === 'ingreso' && concepto.trim()) {
+      nuevosErrores.concepto = 'Los ingresos no llevan concepto';
     }
 
-    if (!empleado.trim()) {
-      nuevosErrores.empleado = 'El empleado es requerido';
+    // Egresos: SIEMPRE llevan concepto
+    if (tipo === 'egreso' && !concepto.trim()) {
+      nuevosErrores.concepto = 'El concepto es requerido para egresos';
     }
 
-    if (!ruta.trim()) {
-      nuevosErrores.ruta = 'La ruta es requerida';
+    // Ingresos: SIEMPRE llevan empleado
+    if (tipo === 'ingreso' && !empleado.trim()) {
+      nuevosErrores.empleado = 'El empleado es requerido para ingresos';
+    }
+
+    // Egresos: Solo llevan empleado si es pago de nómina
+    if (tipo === 'egreso' && !esPagoNomina && empleado.trim()) {
+      nuevosErrores.empleado = 'Los egresos solo llevan empleado si es pago de nómina';
+    }
+
+    if (tipo === 'egreso' && esPagoNomina && !empleado.trim()) {
+      nuevosErrores.empleado = 'El empleado es requerido para pago de nómina';
+    }
+
+    // Ingresos: SIEMPRE llevan ruta
+    if (tipo === 'ingreso' && !ruta.trim()) {
+      nuevosErrores.ruta = 'La ruta es requerida para ingresos';
+    }
+
+    // Egresos: NO llevan ruta
+    if (tipo === 'egreso' && ruta.trim()) {
+      nuevosErrores.ruta = 'Los egresos no llevan ruta';
     }
 
     if (!monto.trim()) {
@@ -79,16 +103,27 @@ export function FormularioRegistro({ tipo, onRegistroCreado }: FormularioRegistr
 
       if (online) {
         // Modo online: guardar directamente en Supabase
+        const registro: any = {
+          folder_diario_id: folderActual.id,
+          tipo,
+          monto: montoNum,
+        };
+
+        // Agregar campos según el tipo
+        if (tipo === 'ingreso') {
+          registro.empleado = empleado.trim();
+          registro.ruta = ruta.trim();
+        } else {
+          // egreso
+          registro.concepto = concepto.trim();
+          if (esPagoNomina) {
+            registro.empleado = empleado.trim();
+          }
+        }
+
         const { data: nuevoRegistro, error: insertError } = await supabase
           .from('registros')
-          .insert([{
-            folder_diario_id: folderActual.id,
-            tipo,
-            concepto: concepto.trim(),
-            empleado: empleado.trim(),
-            ruta: ruta.trim(),
-            monto: montoNum,
-          }])
+          .insert([registro])
           .select()
           .single();
 
@@ -103,20 +138,31 @@ export function FormularioRegistro({ tipo, onRegistroCreado }: FormularioRegistr
         const registroId = crypto.randomUUID();
         const ahora = new Date().toISOString();
 
-        await db.registros_pendientes.add({
+        const registro: any = {
           id: registroId,
           folder_diario_id: folderActual.id,
           tipo,
-          concepto: concepto.trim(),
-          empleado: empleado.trim(),
-          ruta: ruta.trim(),
           monto: montoNum,
           creado_por: perfil?.id || null,
           created_at: ahora,
           updated_at: ahora,
-          sincronizado: 0, // 0 = false
+          sincronizado: 0,
           intentos_sincronizacion: 0,
-        });
+        };
+
+        // Agregar campos según el tipo
+        if (tipo === 'ingreso') {
+          registro.empleado = empleado.trim();
+          registro.ruta = ruta.trim();
+        } else {
+          // egreso
+          registro.concepto = concepto.trim();
+          if (esPagoNomina) {
+            registro.empleado = empleado.trim();
+          }
+        }
+
+        await db.registros_pendientes.add(registro);
 
         setRegistroCreado(registroId);
 
@@ -178,48 +224,54 @@ export function FormularioRegistro({ tipo, onRegistroCreado }: FormularioRegistr
         </div>
       )}
 
-      {/* Concepto */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Concepto *
-        </label>
-        <SelectorCatalogo
-          tipo="conceptos"
-          value={concepto}
-          onChange={setConcepto}
-          placeholder="Seleccionar o escribir concepto..."
-          permitirManual={true}
-          error={errores.concepto}
-        />
-      </div>
+      {/* Concepto - Solo para egresos */}
+      {tipo === 'egreso' && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Concepto *
+          </label>
+          <SelectorCatalogo
+            tipo="conceptos"
+            value={concepto}
+            onChange={setConcepto}
+            placeholder="Seleccionar o escribir concepto..."
+            permitirManual={true}
+            error={errores.concepto}
+          />
+        </div>
+      )}
 
-      {/* Empleado */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Empleado *
-        </label>
-        <SelectorCatalogo
-          tipo="empleados"
-          value={empleado}
-          onChange={setEmpleado}
-          placeholder="Seleccionar empleado..."
-          error={errores.empleado}
-        />
-      </div>
+      {/* Empleado - Para ingresos siempre, para egresos solo si es pago de nómina */}
+      {(tipo === 'ingreso' || (tipo === 'egreso' && esPagoNomina)) && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Empleado *
+          </label>
+          <SelectorCatalogo
+            tipo="empleados"
+            value={empleado}
+            onChange={setEmpleado}
+            placeholder="Seleccionar empleado..."
+            error={errores.empleado}
+          />
+        </div>
+      )}
 
-      {/* Ruta */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Ruta *
-        </label>
-        <SelectorCatalogo
-          tipo="rutas"
-          value={ruta}
-          onChange={setRuta}
-          placeholder="Seleccionar ruta..."
-          error={errores.ruta}
-        />
-      </div>
+      {/* Ruta - Solo para ingresos */}
+      {tipo === 'ingreso' && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Ruta *
+          </label>
+          <SelectorCatalogo
+            tipo="rutas"
+            value={ruta}
+            onChange={setRuta}
+            placeholder="Seleccionar ruta..."
+            error={errores.ruta}
+          />
+        </div>
+      )}
 
       {/* Monto */}
       <div>
