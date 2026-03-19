@@ -10,9 +10,9 @@ interface BotonEnviarReporteProps {
 }
 
 export function BotonEnviarReporte({
-  semana,
-  folders,
-  registros,
+  semana: _semana,
+  folders: _folders,
+  registros: _registros,
   destinatarioEmail,
   destinatarioWhatsApp,
 }: BotonEnviarReporteProps) {
