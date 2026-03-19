@@ -27,9 +27,6 @@ export function FormularioRegistro({ tipo, onRegistroCreado }: FormularioRegistr
 
   const esPagoNomina = concepto.toLowerCase().includes('nómina') || concepto.toLowerCase().includes('nomina');
 
-  // DEBUG: Verificar que la prop tipo se recibe correctamente
-  console.log('FormularioRegistro - tipo:', tipo);
-
   const validarFormulario = (): boolean => {
     const nuevosErrores: Record<string, string> = {};
 
@@ -243,11 +240,6 @@ export function FormularioRegistro({ tipo, onRegistroCreado }: FormularioRegistr
           />
         </div>
       )}
-
-      {/* DEBUG: Mostrar condiciones */}
-      {console.log('Mostrar Concepto?', tipo === 'egreso')}
-      {console.log('Mostrar Empleado?', tipo === 'ingreso' || (tipo === 'egreso' && esPagoNomina))}
-      {console.log('Mostrar Ruta?', tipo === 'ingreso')}
 
       {/* Empleado - Para ingresos siempre, para egresos solo si es pago de nómina */}
       {(tipo === 'ingreso' || (tipo === 'egreso' && esPagoNomina)) && (
