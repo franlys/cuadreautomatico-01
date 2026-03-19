@@ -17,7 +17,7 @@ export function FolderDiario() {
   } = useFolderStore();
   
   const [cerrandoFolder, setCerrandoFolder] = useState(false);
-  const esDueno = perfil?.rol === 'Dueño';
+  const puedeCerrarFolder = perfil?.rol === 'Usuario_Completo';
 
   useEffect(() => {
     obtenerOCrearFolderActual();
@@ -129,7 +129,7 @@ export function FolderDiario() {
               <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-md">
                 ✓ Abierto
               </span>
-              {esDueno && (
+              {puedeCerrarFolder && (
                 <button
                   onClick={handleCerrarFolder}
                   disabled={cerrandoFolder}

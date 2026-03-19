@@ -9,8 +9,8 @@ export function FolderDiarioPage() {
   const { perfil } = useAuth();
   const { refrescarFolderActual } = useFolderStore();
 
-  const puedeRegistrarIngresos = perfil?.rol === 'Usuario_Ingresos' || perfil?.rol === 'Dueño';
-  const puedeRegistrarEgresos = perfil?.rol === 'Usuario_Egresos' || perfil?.rol === 'Dueño';
+  const puedeRegistrarIngresos = perfil?.rol === 'Usuario_Ingresos' || perfil?.rol === 'Usuario_Completo';
+  const puedeRegistrarEgresos = perfil?.rol === 'Usuario_Egresos' || perfil?.rol === 'Usuario_Completo';
 
   return (
     <Layout>

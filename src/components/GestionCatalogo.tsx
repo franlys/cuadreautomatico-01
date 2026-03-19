@@ -24,7 +24,7 @@ export function GestionCatalogo({ tipo, titulo }: GestionCatalogoProps) {
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
 
-  const esDueno = perfil?.rol === 'Dueño';
+  const puedeEditar = perfil?.rol === 'Usuario_Completo' || perfil?.rol === 'Usuario_Ingresos' || perfil?.rol === 'Usuario_Egresos';
 
   useEffect(() => {
     cargarItems();
@@ -184,23 +184,25 @@ export function GestionCatalogo({ tipo, titulo }: GestionCatalogoProps) {
       )}
 
       {/* Formulario para agregar nuevo item */}
-      <form onSubmit={agregarItem} className="mb-6">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={nuevoNombre}
-            onChange={(e) => setNuevoNombre(e.target.value)}
-            placeholder={`Nuevo ${tipo.slice(0, -1)}...`}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          <button
-            type="submit"
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            Agregar
-          </button>
-        </div>
-      </form>
+      {puedeEditar && (
+        <form onSubmit={agregarItem} className="mb-6">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={nuevoNombre}
+              onChange={(e) => setNuevoNombre(e.target.value)}
+              placeholder={`Nuevo ${tipo.slice(0, -1)}...`}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <button
+              type="submit"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              Agregar
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* Búsqueda */}
       <div className="mb-4">
@@ -258,7 +260,7 @@ export function GestionCatalogo({ tipo, titulo }: GestionCatalogoProps) {
                     {!item.activo && ' (Inactivo)'}
                   </span>
                   <div className="flex gap-2">
-                    {esDueno && (
+                    {puedeEditar && (
                       <>
                         <button
                           onClick={() => iniciarEdicion(item)}
@@ -292,9 +294,9 @@ export function GestionCatalogo({ tipo, titulo }: GestionCatalogoProps) {
         )}
       </div>
 
-      {!esDueno && (
+      {!puedeEditar && (
         <p className="mt-4 text-sm text-gray-500">
-          Solo el Dueño puede editar o eliminar elementos del catálogo.
+          No tienes permisos para editar o eliminar elementos del catálogo.
         </p>
       )}
     </div>

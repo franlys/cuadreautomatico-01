@@ -147,8 +147,8 @@ export function FormularioRegistro({ tipo, onRegistroCreado }: FormularioRegistr
 
   // Verificar permisos según rol
   const puedeRegistrar = 
-    (tipo === 'ingreso' && (perfil?.rol === 'Usuario_Ingresos' || perfil?.rol === 'Usuario_Completo' || perfil?.rol === 'Dueño')) ||
-    (tipo === 'egreso' && (perfil?.rol === 'Usuario_Egresos' || perfil?.rol === 'Usuario_Completo' || perfil?.rol === 'Dueño'));
+    (tipo === 'ingreso' && (perfil?.rol === 'Usuario_Ingresos' || perfil?.rol === 'Usuario_Completo')) ||
+    (tipo === 'egreso' && (perfil?.rol === 'Usuario_Egresos' || perfil?.rol === 'Usuario_Completo'));
 
   if (!puedeRegistrar) {
     return (

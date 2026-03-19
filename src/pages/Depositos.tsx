@@ -2,10 +2,14 @@ import { Layout } from '../components/Layout';
 import { FormularioDeposito } from '../components/FormularioDeposito';
 import { HistorialDepositos } from '../components/HistorialDepositos';
 import { useFolderStore } from '../stores/folderStore';
+import { useAuth } from '../hooks/useAuth';
 import { useEffect } from 'react';
 
 export function Depositos() {
+  const { perfil } = useAuth();
   const { semanaActual, obtenerOCrearSemanaActual } = useFolderStore();
+
+  const puedeCrearDepositos = perfil?.rol === 'Usuario_Completo' || perfil?.rol === 'Usuario_Ingresos';
 
   useEffect(() => {
     obtenerOCrearSemanaActual();
@@ -54,14 +58,27 @@ export function Depositos() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Formulario de registro */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Registrar Depósito
-            </h3>
-            <FormularioDeposito
-              onDepositoCreado={() => obtenerOCrearSemanaActual()}
-            />
-          </div>
+          {puedeCrearDepositos ? (
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Registrar Depósito
+              </h3>
+              <FormularioDeposito
+                onDepositoCreado={() => obtenerOCrearSemanaActual()}
+              />
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Registrar Depósito
+              </h3>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+                <p className="text-sm text-yellow-800">
+                  No tienes permisos para registrar depósitos. Solo puedes ver el historial.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Historial */}
           <div className="bg-white rounded-lg shadow p-6">
