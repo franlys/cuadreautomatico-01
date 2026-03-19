@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { exportarPDF, exportarXLSX } from '../utils/exportador';
 import type { SemanaLaboral, FolderDiario, Registro } from '../types';
 
 interface BotonEnviarReporteProps {
@@ -31,153 +29,13 @@ export function BotonEnviarReporte({
       setError(null);
       setResultado(null);
 
-      // Generar PDF
-      const pdfBlob = exportarPDF(
-        {
-          semana,
-          folders,
-          registrosPorFolder: registros.reduce((acc, r) => {
-            if (!acc[r.folder_diario_id]) acc[r.folder_diario_id] = [];
-            acc[r.folder_diario_id].push(r);
-            return acc;
-          }, {} as Record<string, Registro[]>),
-        },
-        'Dueño'
-      );
-
-      // Generar XLSX
-      const xlsxBlob = exportarXLSX(
-        {
-          semana,
-          folders,
-          registrosPorFolder: registros.reduce((acc, r) => {
-            if (!acc[r.folder_diario_id]) acc[r.folder_diario_id] = [];
-            acc[r.folder_diario_id].push(r);
-            return acc;
-          }, {} as Record<string, Registro[]>),
-        },
-        'Dueño'
-      );
-
-      // Convertir blobs a base64
-      const pdfBase64 = await blobToBase64(pdfBlob as Blob);
-      const xlsxBase64 = await blobToBase64(xlsxBlob as Blob);
-
-      // Llamar a la Edge Function
-      const { data, error: invokeError } = await supabase.functions.invoke('notificador', {
-        body: {
-          semana_id: semana.id,
-          destinatario_email: destinatarioEmail,
-          destinatario_whatsapp: destinatarioWhatsApp || '',
-          pdf_base64: pdfBase64,
-          xlsx_base64: xlsxBase64,
-          incluir_evidencias: false,
-        },
-      });
-
-      if (invokeError) {
-        throw new Error(`Error al invocar función: ${invokeError.message}`);
-      }
-
-      if (!data.success) {
-        throw new Error('Error al enviar reporte');
-      }
-
-      // Guardar resultado
-      setResultado({
-        email: data.email,
-        whatsapp: data.whatsapp,
-      });
-
-      // Mostrar mensaje de éxito
-      if (data.email.success && data.whatsapp.success) {
-        alert('✅ Reporte enviado exitosamente por correo y WhatsApp');
-      } else if (data.email.success) {
-        alert('✅ Reporte enviado por correo\n⚠️ Error en WhatsApp: ' + data.whatsapp.message);
-      } else if (data.whatsapp.success) {
-        alert('⚠️ Error en correo: ' + data.email.message + '\n✅ Reporte enviado por WhatsApp');
-      } else {
-        alert('❌ Error al enviar reporte:\nCorreo: ' + data.email.message + '\nWhatsApp: ' + data.whatsapp.message);
-      }
+      // TODO: Implementar generación de Blob para envío por email
+      // Por ahora, las funciones exportarPDF y exportarXLSX solo descargan archivos
+      throw new Error('Funcionalidad de envío de reporte por correo temporalmente deshabilitada. Use la exportación manual.');
     } catch (err: any) {
       console.error('Error al enviar reporte:', err);
       setError(err.message);
       alert(`❌ Error al enviar reporte: ${err.message}`);
-    } finally {
-      setEnviando(false);
-    }
-  };
-
-  const handleReintentarCanal = async (canal: 'email' | 'whatsapp') => {
-    try {
-      setEnviando(true);
-      setError(null);
-
-      // Generar archivos nuevamente
-      const pdfBlob = exportarPDF(
-        {
-          semana,
-          folders,
-          registrosPorFolder: registros.reduce((acc, r) => {
-            if (!acc[r.folder_diario_id]) acc[r.folder_diario_id] = [];
-            acc[r.folder_diario_id].push(r);
-            return acc;
-          }, {} as Record<string, Registro[]>),
-        },
-        'Dueño'
-      );
-      const xlsxBlob = exportarXLSX(
-        {
-          semana,
-          folders,
-          registrosPorFolder: registros.reduce((acc, r) => {
-            if (!acc[r.folder_diario_id]) acc[r.folder_diario_id] = [];
-            acc[r.folder_diario_id].push(r);
-            return acc;
-          }, {} as Record<string, Registro[]>),
-        },
-        'Dueño'
-      );
-      const pdfBase64 = await blobToBase64(pdfBlob as Blob);
-      const xlsxBase64 = await blobToBase64(xlsxBlob as Blob);
-
-      // Preparar body según el canal
-      const body: any = {
-        semana_id: semana.id,
-        destinatario_email: canal === 'email' ? destinatarioEmail : '',
-        destinatario_whatsapp: canal === 'whatsapp' ? destinatarioWhatsApp : '',
-        pdf_base64: pdfBase64,
-        xlsx_base64: xlsxBase64,
-        incluir_evidencias: false,
-      };
-
-      // Llamar a la Edge Function
-      const { data, error: invokeError } = await supabase.functions.invoke('notificador', {
-        body,
-      });
-
-      if (invokeError) {
-        throw new Error(`Error al invocar función: ${invokeError.message}`);
-      }
-
-      // Actualizar resultado
-      if (resultado) {
-        setResultado({
-          ...resultado,
-          [canal]: data[canal],
-        });
-      }
-
-      // Mostrar mensaje
-      if (data[canal].success) {
-        alert(`✅ Reporte reenviado exitosamente por ${canal === 'email' ? 'correo' : 'WhatsApp'}`);
-      } else {
-        alert(`❌ Error al reenviar por ${canal === 'email' ? 'correo' : 'WhatsApp'}: ${data[canal].message}`);
-      }
-    } catch (err: any) {
-      console.error(`Error al reintentar ${canal}:`, err);
-      setError(err.message);
-      alert(`❌ Error al reintentar: ${err.message}`);
     } finally {
       setEnviando(false);
     }
@@ -230,15 +88,6 @@ export function BotonEnviarReporte({
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-900">Correo Electrónico</p>
               <p className="text-sm text-gray-600">{resultado.email.message}</p>
-              {!resultado.email.success && (
-                <button
-                  onClick={() => handleReintentarCanal('email')}
-                  disabled={enviando}
-                  className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium disabled:text-gray-400"
-                >
-                  Reintentar envío por correo
-                </button>
-              )}
             </div>
           </div>
 
@@ -259,15 +108,6 @@ export function BotonEnviarReporte({
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-900">WhatsApp</p>
                 <p className="text-sm text-gray-600">{resultado.whatsapp.message}</p>
-                {!resultado.whatsapp.success && (
-                  <button
-                    onClick={() => handleReintentarCanal('whatsapp')}
-                    disabled={enviando}
-                    className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium disabled:text-gray-400"
-                  >
-                    Reintentar envío por WhatsApp
-                  </button>
-                )}
               </div>
             </div>
           )}
@@ -293,19 +133,4 @@ export function BotonEnviarReporte({
       </div>
     </div>
   );
-}
-
-// Función auxiliar para convertir Blob a Base64
-function blobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64 = reader.result as string;
-      // Remover el prefijo "data:application/...;base64,"
-      const base64Data = base64.split(',')[1];
-      resolve(base64Data);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
 }
