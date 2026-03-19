@@ -114,7 +114,7 @@ export function FormularioRegistro({ tipo, onRegistroCreado }: FormularioRegistr
           creado_por: perfil?.id || null,
           created_at: ahora,
           updated_at: ahora,
-          sincronizado: false,
+          sincronizado: 0, // 0 = false
           intentos_sincronizacion: 0,
         });
 
@@ -147,8 +147,8 @@ export function FormularioRegistro({ tipo, onRegistroCreado }: FormularioRegistr
 
   // Verificar permisos según rol
   const puedeRegistrar = 
-    (tipo === 'ingreso' && (perfil?.rol === 'Usuario_Ingresos' || perfil?.rol === 'Dueño')) ||
-    (tipo === 'egreso' && (perfil?.rol === 'Usuario_Egresos' || perfil?.rol === 'Dueño'));
+    (tipo === 'ingreso' && (perfil?.rol === 'Usuario_Ingresos' || perfil?.rol === 'Usuario_Completo' || perfil?.rol === 'Dueño')) ||
+    (tipo === 'egreso' && (perfil?.rol === 'Usuario_Egresos' || perfil?.rol === 'Usuario_Completo' || perfil?.rol === 'Dueño'));
 
   if (!puedeRegistrar) {
     return (

@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { Registro, FolderDiario, Empleado, Ruta, Concepto, SemanaLaboral } from '../types';
+import type { Registro, FolderDiario, SemanaLaboral } from '../types';
 
 // Interfaces para datos offline
 export interface RegistroPendiente extends Registro {

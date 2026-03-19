@@ -5,11 +5,11 @@ export function useAuth() {
 
   const isAuthenticated = !!user && !!perfil;
   
-  const hasRole = (role: 'Usuario_Ingresos' | 'Usuario_Egresos' | 'Dueño') => {
+  const hasRole = (role: 'Usuario_Ingresos' | 'Usuario_Egresos' | 'Usuario_Completo' | 'Dueño') => {
     return perfil?.rol === role;
   };
 
-  const hasAnyRole = (roles: Array<'Usuario_Ingresos' | 'Usuario_Egresos' | 'Dueño'>) => {
+  const hasAnyRole = (roles: Array<'Usuario_Ingresos' | 'Usuario_Egresos' | 'Usuario_Completo' | 'Dueño'>) => {
     return perfil ? roles.includes(perfil.rol) : false;
   };
 

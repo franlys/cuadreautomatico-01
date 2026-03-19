@@ -1,5 +1,6 @@
 // Módulo de autenticación offline
-import { db, type CredencialesCache } from './db';
+import { db } from './db';
+import type { CredencialesCache } from './db';
 
 // Función simple de hash (NO usar en producción real, solo para demo)
 // En producción, usar una librería de criptografía adecuada

@@ -1,6 +1,6 @@
 // Módulo de sincronización para modo offline
 import { supabase } from './supabase';
-import { db, type RegistroPendiente, type EvidenciaPendiente } from './db';
+import { db, type RegistroPendiente } from './db';
 
 export interface ConflictoSincronizacion {
   registro_local: RegistroPendiente;

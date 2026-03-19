@@ -32,24 +32,36 @@ export function BotonEnviarReporte({
       setResultado(null);
 
       // Generar PDF
-      const pdfBlob = await exportarPDF(
-        semana,
-        folders,
-        registros,
-        'Dueño' // Siempre exportar todo para el Dueño
+      const pdfBlob = exportarPDF(
+        {
+          semana,
+          folders,
+          registrosPorFolder: registros.reduce((acc, r) => {
+            if (!acc[r.folder_diario_id]) acc[r.folder_diario_id] = [];
+            acc[r.folder_diario_id].push(r);
+            return acc;
+          }, {} as Record<string, Registro[]>),
+        },
+        'Dueño'
       );
 
       // Generar XLSX
-      const xlsxBlob = await exportarXLSX(
-        semana,
-        folders,
-        registros,
-        'Dueño' // Siempre exportar todo para el Dueño
+      const xlsxBlob = exportarXLSX(
+        {
+          semana,
+          folders,
+          registrosPorFolder: registros.reduce((acc, r) => {
+            if (!acc[r.folder_diario_id]) acc[r.folder_diario_id] = [];
+            acc[r.folder_diario_id].push(r);
+            return acc;
+          }, {} as Record<string, Registro[]>),
+        },
+        'Dueño'
       );
 
       // Convertir blobs a base64
-      const pdfBase64 = await blobToBase64(pdfBlob);
-      const xlsxBase64 = await blobToBase64(xlsxBlob);
+      const pdfBase64 = await blobToBase64(pdfBlob as Blob);
+      const xlsxBase64 = await blobToBase64(xlsxBlob as Blob);
 
       // Llamar a la Edge Function
       const { data, error: invokeError } = await supabase.functions.invoke('notificador', {
@@ -102,10 +114,32 @@ export function BotonEnviarReporte({
       setError(null);
 
       // Generar archivos nuevamente
-      const pdfBlob = await exportarPDF(semana, folders, registros, 'Dueño');
-      const xlsxBlob = await exportarXLSX(semana, folders, registros, 'Dueño');
-      const pdfBase64 = await blobToBase64(pdfBlob);
-      const xlsxBase64 = await blobToBase64(xlsxBlob);
+      const pdfBlob = exportarPDF(
+        {
+          semana,
+          folders,
+          registrosPorFolder: registros.reduce((acc, r) => {
+            if (!acc[r.folder_diario_id]) acc[r.folder_diario_id] = [];
+            acc[r.folder_diario_id].push(r);
+            return acc;
+          }, {} as Record<string, Registro[]>),
+        },
+        'Dueño'
+      );
+      const xlsxBlob = exportarXLSX(
+        {
+          semana,
+          folders,
+          registrosPorFolder: registros.reduce((acc, r) => {
+            if (!acc[r.folder_diario_id]) acc[r.folder_diario_id] = [];
+            acc[r.folder_diario_id].push(r);
+            return acc;
+          }, {} as Record<string, Registro[]>),
+        },
+        'Dueño'
+      );
+      const pdfBase64 = await blobToBase64(pdfBlob as Blob);
+      const xlsxBase64 = await blobToBase64(xlsxBlob as Blob);
 
       // Preparar body según el canal
       const body: any = {
