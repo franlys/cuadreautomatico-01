@@ -27,8 +27,27 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,pdf}'],
+        // Estrategia NetworkFirst para archivos estáticos - siempre intenta red primero
+        navigateFallback: null,
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
         runtimeCaching: [
           {
+            // Assets estáticos (JS, CSS) - NetworkFirst para obtener siempre la última versión
+            urlPattern: /\.(?:js|css)$/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'static-resources',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 // 24 horas
+              },
+              networkTimeoutSeconds: 10
+            }
+          },
+          {
+            // Supabase API - NetworkFirst
             urlPattern: /^https:\/\/emifgmstkhkpgrshlsnt\.supabase\.co\/.*/i,
             handler: 'NetworkFirst',
             options: {
@@ -39,7 +58,8 @@ export default defineConfig({
               },
               cacheableResponse: {
                 statuses: [0, 200]
-              }
+              },
+              networkTimeoutSeconds: 10
             }
           }
         ]

@@ -1,5 +1,6 @@
 import { useAuth } from '../hooks/useAuth';
 import { useAuthStore } from '../stores/authStore';
+import { ActualizadorPWA } from './ActualizadorPWA';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,6 +12,8 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <ActualizadorPWA />
+      
       <nav className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
