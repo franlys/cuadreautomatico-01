@@ -2,6 +2,7 @@ import { Layout } from '../components/Layout';
 import { FolderDiario } from '../components/FolderDiario';
 import { FormularioRegistro } from '../components/FormularioRegistro';
 import { ListaRegistros } from '../components/ListaRegistros';
+import { DebugAuth } from '../components/DebugAuth';
 import { useAuth } from '../hooks/useAuth';
 import { useFolderStore } from '../stores/folderStore';
 
@@ -14,6 +15,8 @@ export function FolderDiarioPage() {
 
   return (
     <Layout>
+      <DebugAuth />
+      
       <div className="space-y-6">
         <FolderDiario />
         
