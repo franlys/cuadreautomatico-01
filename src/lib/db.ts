@@ -97,5 +97,8 @@ async function inicializarBaseDatos(): Promise<CuadreAutomaticoDatabase> {
   }
 }
 
-// Exportar instancia inicializada
-export const db = await inicializarBaseDatos();
+// Exportar instancia (se inicializa de forma lazy)
+export const db = new CuadreAutomaticoDatabase();
+
+// Inicializar la base de datos cuando se importe el módulo
+inicializarBaseDatos().catch(console.error);
