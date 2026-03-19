@@ -39,10 +39,6 @@ export function DebugAuth() {
         </div>
         
         <div>
-          <strong>Perfil Email:</strong> {perfil?.email || '❌ No hay email'}
-        </div>
-        
-        <div>
           <strong>Perfil Nombre:</strong> {perfil?.nombre || '❌ No hay nombre'}
         </div>
         
