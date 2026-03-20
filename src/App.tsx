@@ -3,11 +3,14 @@ import { AuthGuard } from './components/AuthGuard';
 import { EstadoSincronizacion } from './components/EstadoSincronizacion';
 import { useAuth } from './hooks/useAuth';
 import { useAuthStore } from './stores/authStore';
+import { usePermissions } from './hooks/usePermissions';
 import { Catalogos } from './pages/Catalogos';
 import { FolderDiarioPage } from './pages/FolderDiarioPage';
 import { ResumenSemanal } from './pages/ResumenSemanal';
 import { Depositos } from './pages/Depositos';
 import { DashboardDueno } from './pages/DashboardDueno';
+import { HojasRutaPage } from './pages/HojasRutaPage';
+import { DashboardSuperAdmin } from './pages/DashboardSuperAdmin';
 import { configurarSincronizacionAutomatica } from './lib/sync';
 
 function App() {
@@ -24,14 +27,20 @@ function App() {
   );
 }
 
-type Vista = 'inicio' | 'catalogos' | 'folder' | 'resumen' | 'depositos' | 'dashboard';
+type Vista = 'inicio' | 'catalogos' | 'folder' | 'resumen' | 'depositos' | 'dashboard' | 'hojas-ruta' | 'super-admin';
 
 function MainApp() {
   const { perfil } = useAuth();
   const logout = useAuthStore((state) => state.logout);
+  const { 
+    canAccessRoute, 
+    hasAutomacionCompleta,
+    isSuperAdmin 
+  } = usePermissions();
   const [vistaActual, setVistaActual] = useState<Vista>('inicio');
   
   const esDueno = perfil?.rol === 'Dueño';
+  const esSuperAdmin = isSuperAdmin();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -54,7 +63,7 @@ function MainApp() {
             </div>
           </div>
           
-          {/* Menú de navegación */}
+          {/* Menú de navegación con interfaz adaptativa (Req 18.1-18.6) */}
           <div className="mt-4 flex gap-2 flex-wrap">
             <button
               onClick={() => setVistaActual('inicio')}
@@ -67,7 +76,22 @@ function MainApp() {
               Inicio
             </button>
             
-            {esDueno && (
+            {/* Dashboard Super Admin - solo visible para Super_Admin */}
+            {esSuperAdmin && canAccessRoute('/super-admin') && (
+              <button
+                onClick={() => setVistaActual('super-admin')}
+                className={`px-4 py-2 text-sm font-medium rounded-md ${
+                  vistaActual === 'super-admin'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Super Admin
+              </button>
+            )}
+            
+            {/* Dashboard Dueño */}
+            {esDueno && canAccessRoute('/dashboard') && (
               <button
                 onClick={() => setVistaActual('dashboard')}
                 className={`px-4 py-2 text-sm font-medium rounded-md ${
@@ -80,46 +104,71 @@ function MainApp() {
               </button>
             )}
             
-            <button
-              onClick={() => setVistaActual('folder')}
-              className={`px-4 py-2 text-sm font-medium rounded-md ${
-                vistaActual === 'folder'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              Folder Diario
-            </button>
-            <button
-              onClick={() => setVistaActual('resumen')}
-              className={`px-4 py-2 text-sm font-medium rounded-md ${
-                vistaActual === 'resumen'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              Resumen Semanal
-            </button>
-            <button
-              onClick={() => setVistaActual('depositos')}
-              className={`px-4 py-2 text-sm font-medium rounded-md ${
-                vistaActual === 'depositos'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              Depósitos
-            </button>
-            <button
-              onClick={() => setVistaActual('catalogos')}
-              className={`px-4 py-2 text-sm font-medium rounded-md ${
-                vistaActual === 'catalogos'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              Catálogos
-            </button>
+            {/* Hojas de Ruta - solo visible en automatización completa (Req 18.2) */}
+            {hasAutomacionCompleta() && canAccessRoute('/hojas-ruta') && (
+              <button
+                onClick={() => setVistaActual('hojas-ruta')}
+                className={`px-4 py-2 text-sm font-medium rounded-md ${
+                  vistaActual === 'hojas-ruta'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                🚀 Hojas de Ruta
+              </button>
+            )}
+            
+            {canAccessRoute('/folder') && (
+              <button
+                onClick={() => setVistaActual('folder')}
+                className={`px-4 py-2 text-sm font-medium rounded-md ${
+                  vistaActual === 'folder'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Folder Diario
+              </button>
+            )}
+            
+            {canAccessRoute('/resumen') && (
+              <button
+                onClick={() => setVistaActual('resumen')}
+                className={`px-4 py-2 text-sm font-medium rounded-md ${
+                  vistaActual === 'resumen'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Resumen Semanal
+              </button>
+            )}
+            
+            {canAccessRoute('/depositos') && (
+              <button
+                onClick={() => setVistaActual('depositos')}
+                className={`px-4 py-2 text-sm font-medium rounded-md ${
+                  vistaActual === 'depositos'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Depósitos
+              </button>
+            )}
+            
+            {canAccessRoute('/catalogos') && (
+              <button
+                onClick={() => setVistaActual('catalogos')}
+                className={`px-4 py-2 text-sm font-medium rounded-md ${
+                  vistaActual === 'catalogos'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Catálogos
+              </button>
+            )}
           </div>
         </div>
       </nav>
@@ -161,6 +210,8 @@ function MainApp() {
                   <li>• Desglose detallado por día y tipo</li>
                   <li>• Exportación de reportes en PDF y XLSX</li>
                   <li>• Filtrado de datos por rol de usuario</li>
+                  <li>• Sistema de permisos por rol y nivel de automatización</li>
+                  <li>• Interfaz adaptativa según nivel de automatización</li>
                 </ul>
               </div>
               
@@ -177,6 +228,8 @@ function MainApp() {
           </div>
         )}
 
+        {vistaActual === 'super-admin' && esSuperAdmin && <DashboardSuperAdmin />}
+        
         {vistaActual === 'catalogos' && <Catalogos />}
         
         {vistaActual === 'folder' && <FolderDiarioPage />}
@@ -186,6 +239,8 @@ function MainApp() {
         {vistaActual === 'depositos' && <Depositos />}
         
         {vistaActual === 'dashboard' && esDueno && <DashboardDueno />}
+        
+        {vistaActual === 'hojas-ruta' && hasAutomacionCompleta() && <HojasRutaPage />}
       </div>
     </div>
   );

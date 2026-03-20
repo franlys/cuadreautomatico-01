@@ -10,6 +10,7 @@ export interface RegistroPendiente extends Registro {
 
 export interface EvidenciaPendiente {
   id?: number;
+  empresa_id?: string; // Para validación multi-tenant
   registro_id: string;
   blob: Blob;
   nombre_archivo: string;
@@ -19,6 +20,7 @@ export interface EvidenciaPendiente {
 
 export interface CatalogoCache {
   id: string;
+  empresa_id?: string; // Para filtrado multi-tenant
   tipo: 'empleado' | 'ruta' | 'concepto';
   nombre?: string;
   apellido?: string;
@@ -58,6 +60,25 @@ export class CuadreAutomaticoDatabase extends Dexie {
     }).upgrade(tx => {
       // Limpiar registros pendientes para evitar conflictos de esquema
       return tx.table('registros_pendientes').clear();
+    });
+
+    // Versión 3: Agregar índices de empresa_id para multi-tenant
+    this.version(3).stores({
+      registros_pendientes: 'id, folder_diario_id, tipo, sincronizado, created_at, empresa_id',
+      folders_cache: 'id, fecha_laboral, semana_id, created_at, empresa_id',
+      semanas_cache: 'id, fecha_inicio, fecha_fin, created_at, empresa_id',
+      catalogos_cache: 'id, tipo, nombre, ultima_actualizacion, empresa_id',
+      evidencias_pendientes: '++id, registro_id, sincronizado, empresa_id',
+      credenciales_cache: '++id, email',
+    }).upgrade(async tx => {
+      // Limpiar datos locales para forzar re-sincronización con empresa_id
+      console.log('Actualizando IndexedDB a versión 3 (multi-tenant)...');
+      await tx.table('registros_pendientes').clear();
+      await tx.table('folders_cache').clear();
+      await tx.table('semanas_cache').clear();
+      await tx.table('catalogos_cache').clear();
+      await tx.table('evidencias_pendientes').clear();
+      console.log('✅ IndexedDB actualizado para multi-tenant');
     });
   }
 }

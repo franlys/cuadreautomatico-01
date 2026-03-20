@@ -26,6 +26,26 @@ export async function sincronizarRegistrosPendientes(): Promise<{
   };
 
   try {
+    // Obtener empresa_id del usuario actual
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('Usuario no autenticado');
+      return resultado;
+    }
+
+    const { data: perfil } = await supabase
+      .from('perfiles')
+      .select('empresa_id')
+      .eq('id', user.id)
+      .single();
+
+    if (!perfil?.empresa_id) {
+      console.error('Usuario sin empresa_id asignada');
+      return resultado;
+    }
+
+    const empresaId = perfil.empresa_id;
+
     // Obtener registros pendientes
     const registrosPendientes = await db.registros_pendientes
       .where('sincronizado')
@@ -45,6 +65,7 @@ export async function sincronizarRegistrosPendientes(): Promise<{
           .from('registros')
           .select('*')
           .eq('id', registro.id)
+          .eq('empresa_id', empresaId) // Validar empresa_id
           .maybeSingle();
 
         if (errorBusqueda) {
@@ -53,6 +74,17 @@ export async function sincronizarRegistrosPendientes(): Promise<{
 
         // Si existe en el servidor, verificar conflictos
         if (registroExistente) {
+          // Validar que pertenece a la misma empresa
+          if (registroExistente.empresa_id !== empresaId) {
+            console.error(`Conflicto cross-tenant detectado para registro ${registro.id}`);
+            resultado.conflictos.push({
+              registro_local: registro,
+              registro_servidor: registroExistente,
+              tipo: 'modificacion',
+            });
+            continue;
+          }
+
           // Comparar timestamps
           const timestampLocal = new Date(registro.updated_at).getTime();
           const timestampServidor = new Date(registroExistente.updated_at).getTime();
@@ -68,11 +100,12 @@ export async function sincronizarRegistrosPendientes(): Promise<{
           }
         }
 
-        // Insertar o actualizar en el servidor
+        // Insertar o actualizar en el servidor con empresa_id
         const { error: errorUpsert } = await supabase
           .from('registros')
           .upsert({
             id: registro.id,
+            empresa_id: empresaId, // Incluir empresa_id
             folder_diario_id: registro.folder_diario_id,
             tipo: registro.tipo,
             concepto: registro.concepto,
@@ -126,6 +159,26 @@ export async function sincronizarEvidenciasPendientes(): Promise<{
   };
 
   try {
+    // Obtener empresa_id del usuario actual
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('Usuario no autenticado');
+      return resultado;
+    }
+
+    const { data: perfil } = await supabase
+      .from('perfiles')
+      .select('empresa_id')
+      .eq('id', user.id)
+      .single();
+
+    if (!perfil?.empresa_id) {
+      console.error('Usuario sin empresa_id asignada');
+      return resultado;
+    }
+
+    const empresaId = perfil.empresa_id;
+
     const evidenciasPendientes = await db.evidencias_pendientes
       .where('sincronizado')
       .equals(0)
@@ -139,8 +192,8 @@ export async function sincronizarEvidenciasPendientes(): Promise<{
 
     for (const evidencia of evidenciasPendientes) {
       try {
-        // Subir archivo a Supabase Storage
-        const filePath = `${evidencia.registro_id}/${Date.now()}-${evidencia.nombre_archivo}`;
+        // Subir archivo a Supabase Storage con prefijo empresa_id/
+        const filePath = `${empresaId}/${evidencia.registro_id}/${Date.now()}-${evidencia.nombre_archivo}`;
         const { error: uploadError } = await supabase.storage
           .from('evidencias')
           .upload(filePath, evidencia.blob, {
@@ -151,10 +204,11 @@ export async function sincronizarEvidenciasPendientes(): Promise<{
           throw uploadError;
         }
 
-        // Crear registro en la tabla evidencias
+        // Crear registro en la tabla evidencias con empresa_id
         const { error: insertError } = await supabase
           .from('evidencias')
           .insert({
+            empresa_id: empresaId, // Incluir empresa_id
             registro_id: evidencia.registro_id,
             storage_path: filePath,
             nombre_archivo: evidencia.nombre_archivo,
@@ -188,16 +242,44 @@ export async function sincronizarEvidenciasPendientes(): Promise<{
 // Sincronizar catálogos desde el servidor
 export async function sincronizarCatalogos(): Promise<void> {
   try {
-    // Sincronizar empleados
+    // Obtener empresa_id del usuario actual
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('Usuario no autenticado');
+      return;
+    }
+
+    const { data: perfil } = await supabase
+      .from('perfiles')
+      .select('empresa_id, rol')
+      .eq('id', user.id)
+      .single();
+
+    if (!perfil?.empresa_id) {
+      console.error('Usuario sin empresa_id asignada');
+      return;
+    }
+
+    const empresaId = perfil.empresa_id;
+    const isSuperAdmin = perfil.rol === 'Super_Admin';
+
+    // Limpiar catálogos antiguos de otras empresas (excepto Super Admin)
+    if (!isSuperAdmin) {
+      await db.catalogos_cache.clear();
+    }
+
+    // Sincronizar empleados (filtrados por empresa_id)
     const { data: empleados, error: errorEmpleados } = await supabase
       .from('empleados')
       .select('*')
+      .eq('empresa_id', empresaId)
       .eq('activo', true);
 
     if (!errorEmpleados && empleados) {
       await db.catalogos_cache.bulkPut(
         empleados.map(e => ({
           id: e.id,
+          empresa_id: empresaId, // Incluir empresa_id
           tipo: 'empleado' as const,
           nombre: e.nombre,
           apellido: e.apellido,
@@ -207,16 +289,18 @@ export async function sincronizarCatalogos(): Promise<void> {
       );
     }
 
-    // Sincronizar rutas
+    // Sincronizar rutas (filtradas por empresa_id)
     const { data: rutas, error: errorRutas } = await supabase
       .from('rutas')
       .select('*')
+      .eq('empresa_id', empresaId)
       .eq('activo', true);
 
     if (!errorRutas && rutas) {
       await db.catalogos_cache.bulkPut(
         rutas.map(r => ({
           id: r.id,
+          empresa_id: empresaId, // Incluir empresa_id
           tipo: 'ruta' as const,
           nombre: r.nombre,
           activo: r.activo,
@@ -225,16 +309,18 @@ export async function sincronizarCatalogos(): Promise<void> {
       );
     }
 
-    // Sincronizar conceptos
+    // Sincronizar conceptos (filtrados por empresa_id)
     const { data: conceptos, error: errorConceptos } = await supabase
       .from('conceptos')
       .select('*')
+      .eq('empresa_id', empresaId)
       .eq('activo', true);
 
     if (!errorConceptos && conceptos) {
       await db.catalogos_cache.bulkPut(
         conceptos.map(c => ({
           id: c.id,
+          empresa_id: empresaId, // Incluir empresa_id
           tipo: 'concepto' as const,
           descripcion: c.descripcion,
           activo: c.activo,
@@ -243,7 +329,7 @@ export async function sincronizarCatalogos(): Promise<void> {
       );
     }
 
-    console.log('Catálogos sincronizados exitosamente');
+    console.log('Catálogos sincronizados exitosamente para empresa:', empresaId);
   } catch (error) {
     console.error('Error al sincronizar catálogos:', error);
   }
