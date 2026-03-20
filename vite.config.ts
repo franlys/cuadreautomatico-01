@@ -16,6 +16,7 @@ export default defineConfig({
         theme_color: '#1e40af',
         background_color: '#ffffff',
         display: 'standalone',
+        start_url: '/',
         icons: [
           {
             src: '/favicon.svg',
@@ -32,13 +33,15 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
+        // Cambiar el nombre del cache para forzar actualización
+        cacheId: 'cuadre-automatico-v2',
         runtimeCaching: [
           {
             // Assets estáticos (JS, CSS) - NetworkFirst para obtener siempre la última versión
             urlPattern: /\.(?:js|css)$/i,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'static-resources',
+              cacheName: 'static-resources-v2',
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 // 24 horas
@@ -51,7 +54,7 @@ export default defineConfig({
             urlPattern: /^https:\/\/emifgmstkhkpgrshlsnt\.supabase\.co\/.*/i,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'supabase-cache',
+              cacheName: 'supabase-cache-v2',
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 // 24 horas
