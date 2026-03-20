@@ -1,128 +1,174 @@
-# Guía de Roles - Hojas de Ruta Digitales
+# Guía de Roles para Hojas de Ruta Digitales
 
-## Resumen de Funcionalidad
+## Descripción General
 
-El sistema de hojas de ruta digitales permite la asignación y seguimiento de rutas de entrega con diferentes niveles de acceso según el rol del usuario.
+El sistema de hojas de ruta digitales permite gestionar el flujo completo de entregas y cobros de facturas por parte de empleados de ruta. Este documento describe los roles involucrados y sus responsabilidades.
 
 ---
 
 ## Roles y Permisos
 
 ### 1. Encargado de Almacén
-**Permisos:**
-- ✅ Crear hojas de ruta
-- ✅ Asignar empleados a rutas
-- ✅ Ver todas las hojas de ruta
-- ✅ Editar hojas de ruta no cerradas
-- ✅ Eliminar hojas de ruta
+
+**Responsabilidades:**
+- Crear nuevas hojas de ruta
+- Asignar empleados a las rutas
+- Definir facturas y montos
+- Asignar monto inicial en RD$
 
 **Flujo de trabajo:**
-1. Accede a "Hojas de Ruta" en el menú
-2. Clic en "Crear Nueva Hoja"
-3. Selecciona el empleado de ruta de la lista desplegable
-4. Selecciona la ruta a asignar
-5. Agrega las facturas con sus montos
-6. Define el monto asignado en RD$
-7. Crea la hoja de ruta
+1. Accede a "Hojas de Ruta" desde el menú principal
+2. Hace clic en "Crear Nueva Hoja"
+3. Selecciona el empleado de ruta
+4. Selecciona la ruta a ejecutar
+5. Selecciona la fecha
+6. Agrega las facturas con sus montos y monedas
+7. Define el monto asignado en RD$ para gastos
+8. Guarda la hoja de ruta
 
-### 2. Secretaria
-**Permisos:**
-- ✅ Crear hojas de ruta
-- ✅ Asignar empleados a rutas
-- ✅ Ver todas las hojas de ruta
-- ❌ No puede cerrar hojas de ruta
-
-**Flujo de trabajo:**
-- Mismo proceso que Encargado de Almacén
-- Puede crear y ver hojas, pero no cerrarlas
-
-### 3. Empleado de Ruta
-**Permisos:**
-- ✅ Ver solo sus hojas asignadas
-- ✅ Marcar facturas como entregadas
-- ✅ Registrar cobros con monto y moneda
-- ✅ Registrar gastos (fijos, peaje, combustible, inesperados)
-- ✅ Subir fotos de evidencia para gastos
-- ✅ Ver balance en tiempo real
-- ❌ No puede ver hojas de otros empleados
-- ❌ No puede modificar hojas cerradas
-
-**Flujo de trabajo:**
-1. Accede a "Hojas de Ruta" en el menú
-2. Ve solo las hojas asignadas a su nombre
-3. Clic en "Ejecutar" para abrir una hoja
-4. **Marcar entregas:**
-   - Clic en "Marcar Entregada" para cada factura
-5. **Registrar cobros:**
-   - Clic en "Registrar Cobro"
-   - Ingresa el monto cobrado
-   - Selecciona la moneda (RD$ o USD)
-   - Confirma el cobro
-6. **Registrar gastos:**
-   - Selecciona el tipo de gasto:
-     - **Fijo**: No requiere evidencia
-     - **Peaje**: Requiere foto obligatoria
-     - **Combustible**: Requiere foto obligatoria
-     - **Inesperado**: Requiere descripción y foto opcional
-   - Ingresa el monto y moneda
-   - Toma foto de evidencia (si aplica)
-   - Registra el gasto
-7. **Ver balance:**
-   - El balance se actualiza automáticamente
-   - Muestra total cobrado, total gastado y dinero disponible
-   - Separado por moneda (RD$ y USD)
-
-### 4. Usuario Completo
 **Permisos:**
 - ✅ Crear hojas de ruta
 - ✅ Ver todas las hojas de ruta
-- ✅ Cerrar hojas de ruta
-- ✅ Acceso completo al sistema
-
-**Flujo de trabajo:**
-- Puede realizar todas las acciones
-- Responsable de cerrar hojas de ruta al finalizar
-
-### 5. Dueño
-**Permisos:**
-- ✅ Ver todas las hojas de ruta
-- ✅ Cerrar hojas de ruta
-- ❌ No puede crear ni editar hojas
-
-**Flujo de trabajo:**
-- Solo visualización y cierre de hojas
-- Supervisión general del proceso
+- ❌ Ejecutar hojas de ruta (marcar entregas/cobros)
+- ❌ Cerrar hojas de ruta
 
 ---
 
-## Proceso Completo de una Hoja de Ruta
+### 2. Empleado de Ruta
 
-### Fase 1: Creación (Encargado de Almacén / Secretaria)
+**Responsabilidades:**
+- Ejecutar las hojas de ruta asignadas
+- Marcar facturas como entregadas
+- Registrar cobros con montos y monedas
+- Registrar gastos con evidencias fotográficas
+- Ver balance en tiempo real
+
+**Flujo de trabajo:**
+1. Accede a "Hojas de Ruta" desde el menú principal
+2. Ve solo sus hojas de ruta asignadas
+3. Hace clic en "Ejecutar" en la hoja que va a trabajar
+4. Durante la ruta:
+   - Marca facturas como entregadas (checkbox)
+   - Registra cobros con monto y moneda
+   - Registra gastos (combustible, peajes, etc.) con foto
+   - Ve el balance actualizado en tiempo real
+5. Al finalizar, espera a que Usuario_Completo cierre la ruta
+
+**Permisos:**
+- ❌ Crear hojas de ruta
+- ✅ Ver solo sus hojas de ruta asignadas
+- ✅ Ejecutar sus hojas de ruta (marcar entregas/cobros)
+- ✅ Registrar gastos con evidencias
+- ❌ Cerrar hojas de ruta
+
+**Importante:**
+- Solo puede ver y ejecutar las hojas asignadas a su nombre
+- No puede ver hojas de otros empleados
+- No puede modificar hojas cerradas
+
+---
+
+### 3. Usuario_Completo
+
+**Responsabilidades:**
+- Todas las del Encargado de Almacén
+- Cerrar hojas de ruta
+- Validar balance calculado vs físico
+- Generar registro automático en folder diario
+
+**Flujo de trabajo para cierre:**
+1. Accede a "Hojas de Ruta"
+2. Selecciona una hoja en estado "abierta"
+3. Hace clic en "Cerrar"
+4. Revisa el balance calculado automáticamente:
+   - Total facturas cobradas (RD$ y USD)
+   - Total gastos (RD$ y USD)
+   - Dinero disponible calculado
+5. Ingresa el monto físico contado (RD$ y USD)
+6. Revisa las diferencias (si las hay)
+7. Confirma el cierre
+8. El sistema crea automáticamente un registro de ingreso en el folder diario
+
+**Permisos:**
+- ✅ Crear hojas de ruta
+- ✅ Ver todas las hojas de ruta
+- ✅ Ejecutar hojas de ruta
+- ✅ Cerrar hojas de ruta
+- ✅ Ver diferencias entre calculado y físico
+
+---
+
+### 4. Secretaria
+
+**Responsabilidades:**
+- Crear nuevas hojas de ruta
+- Asignar empleados a las rutas
+- Ver todas las hojas de ruta
+
+**Permisos:**
+- ✅ Crear hojas de ruta
+- ✅ Ver todas las hojas de ruta
+- ❌ Ejecutar hojas de ruta
+- ❌ Cerrar hojas de ruta
+
+---
+
+### 5. Dueño
+
+**Responsabilidades:**
+- Ver todas las hojas de ruta
+- Cerrar hojas de ruta
+- Supervisar operaciones
+
+**Permisos:**
+- ❌ Crear hojas de ruta
+- ✅ Ver todas las hojas de ruta
+- ❌ Ejecutar hojas de ruta
+- ✅ Cerrar hojas de ruta
+
+---
+
+## Flujo Completo del Proceso
+
 ```
-1. Crear hoja de ruta
-2. Asignar empleado
-3. Asignar ruta
-4. Agregar facturas
-5. Definir monto asignado
+1. CREACIÓN (Encargado Almacén / Secretaria / Usuario_Completo)
+   ↓
+   Crear hoja de ruta
+   Asignar empleado
+   Definir facturas y montos
+   Asignar dinero inicial
+   
+2. EJECUCIÓN (Empleado de Ruta)
+   ↓
+   Ver hoja asignada
+   Marcar entregas
+   Registrar cobros
+   Registrar gastos con fotos
+   Ver balance en tiempo real
+   
+3. CIERRE (Usuario_Completo / Dueño)
+   ↓
+   Revisar balance calculado
+   Ingresar monto físico
+   Validar diferencias
+   Confirmar cierre
+   → Registro automático en folder diario
 ```
 
-### Fase 2: Ejecución (Empleado de Ruta)
-```
-1. Ver hoja asignada
-2. Marcar facturas entregadas
-3. Registrar cobros
-4. Registrar gastos con evidencia
-5. Monitorear balance en tiempo real
-```
+---
 
-### Fase 3: Cierre (Usuario Completo / Dueño)
-```
-1. Revisar balance calculado
-2. Ingresar monto físico contado
-3. Ver diferencia (si existe)
-4. Confirmar cierre
-5. Hoja queda bloqueada para edición
-```
+## Estados de Hoja de Ruta
+
+### Abierta
+- Puede ser ejecutada por el empleado
+- Puede registrar entregas, cobros y gastos
+- Balance se actualiza en tiempo real
+
+### Cerrada
+- No se pueden hacer más modificaciones
+- Balance final registrado
+- Ingreso automático creado en folder diario
+- Solo lectura para todos los usuarios
 
 ---
 
@@ -130,79 +176,65 @@ El sistema de hojas de ruta digitales permite la asignación y seguimiento de ru
 
 ### Balance en Tiempo Real
 - Se calcula automáticamente después de cada operación
-- Muestra:
-  - Total facturas cobradas (RD$ y USD)
-  - Total gastos (RD$ y USD)
-  - Dinero disponible = Monto Asignado + Cobros - Gastos
+- Muestra totales por moneda (RD$ y USD)
+- Fórmula: `Dinero Disponible = Monto Asignado + Cobros - Gastos`
 
-### Multi-Moneda
-- Soporte para RD$ y USD
-- Cada factura y gasto tiene su moneda
-- Balance separado por moneda
+### Soporte Multi-Moneda
+- Todas las facturas pueden ser en RD$ o USD
+- Todos los gastos pueden ser en RD$ o USD
+- Los balances se calculan por separado para cada moneda
+- El cierre valida ambas monedas
 
-### Evidencia Fotográfica
-- Gastos de peaje: Foto obligatoria
-- Gastos de combustible: Foto obligatoria
-- Gastos inesperados: Foto opcional
-- Gastos fijos: Sin foto
+### Evidencias Fotográficas
+- Gastos pueden requerir evidencia fotográfica
+- Se suben a Supabase Storage
+- Organizadas por empresa_id para aislamiento multi-tenant
 
-### Seguridad
-- Empleados solo ven sus hojas asignadas
-- Hojas cerradas no se pueden modificar
+### Auditoría Completa
 - Todas las acciones se registran en audit_logs
-
----
-
-## Acceso desde Celular
-
-### Requisitos
-1. Conexión a internet (o modo offline habilitado)
-2. Navegador moderno (Chrome, Safari, Firefox)
-3. Acceso a la cámara para fotos de evidencia
-
-### URL de Acceso
-```
-https://tu-dominio.vercel.app
-```
-
-### Inicio de Sesión
-1. Ingresa tu email
-2. Ingresa tu contraseña
-3. El sistema te redirige según tu rol:
-   - **Empleado de Ruta** → Hojas de Ruta (solo las suyas)
-   - **Encargado de Almacén** → Dashboard con todas las opciones
-   - **Secretaria** → Dashboard con opciones limitadas
-   - **Dueño** → Dashboard de supervisión
-
-### Modo Offline (PWA)
-- La aplicación funciona sin internet
-- Los datos se sincronizan automáticamente al reconectar
-- Ideal para zonas con mala señal
+- Incluye: creación, ejecución, cierre
+- Trazabilidad completa del proceso
 
 ---
 
 ## Preguntas Frecuentes
 
-**¿Puede un empleado ver hojas de otros empleados?**
-No, solo ve las hojas asignadas a su nombre.
+**P: ¿Puede un Empleado de Ruta ver hojas de otros empleados?**
+R: No, solo ve las hojas asignadas a su nombre.
 
-**¿Qué pasa si registro un gasto sin foto cuando es obligatoria?**
-El sistema no permite enviar el formulario hasta que subas la foto.
+**P: ¿Qué pasa si hay diferencia entre el calculado y el físico?**
+R: El sistema muestra la diferencia claramente. El Usuario_Completo o Dueño decide si proceder con el cierre o investigar.
 
-**¿Puedo editar una hoja cerrada?**
-No, las hojas cerradas quedan bloqueadas permanentemente.
+**P: ¿Se puede modificar una hoja cerrada?**
+R: No, las hojas cerradas son de solo lectura. Las políticas RLS previenen modificaciones.
 
-**¿Cómo sé cuánto dinero me queda disponible?**
-El balance en tiempo real muestra el dinero disponible actualizado después de cada cobro y gasto.
+**P: ¿Cómo se asigna un empleado a una hoja de ruta?**
+R: El Encargado de Almacén, Secretaria o Usuario_Completo selecciona el empleado de un dropdown al crear la hoja.
 
-**¿Puedo usar la app sin internet?**
-Sí, si está instalada como PWA. Los cambios se sincronizan al reconectar.
+**P: ¿El Empleado de Ruta necesita estar registrado como usuario?**
+R: Sí, debe tener un perfil con rol 'Empleado_Ruta' y su nombre debe coincidir con un empleado en el catálogo.
 
 ---
 
-## Soporte Técnico
+## Requisitos Técnicos
 
-Para problemas o dudas:
-1. Contacta al administrador del sistema
-2. Revisa los logs de auditoría (solo Super Admin)
-3. Verifica tu conexión a internet
+### Para usar Hojas de Ruta:
+1. La empresa debe tener `nivel_automatizacion = 'completa'`
+2. Los empleados de ruta deben tener perfiles con rol 'Empleado_Ruta'
+3. Debe haber empleados y rutas creados en los catálogos
+4. El menú "Hojas de Ruta" solo aparece si el nivel es 'completa'
+
+### Cambiar Nivel de Automatización:
+- Solo Super_Admin puede cambiar el nivel
+- Se hace desde el Dashboard de Super Admin
+- El cambio se registra en audit_logs
+- La interfaz se actualiza automáticamente para todos los usuarios
+
+---
+
+## Soporte
+
+Para más información sobre:
+- Configuración de empresas: Ver `GUIA_SUPER_ADMIN.md`
+- Flujo completo de hojas de ruta: Ver `GUIA_AUTOMATIZACION_COMPLETA.md`
+- Implementación técnica: Ver `RESUMEN_IMPLEMENTACION_MULTI_TENANT.md`

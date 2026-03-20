@@ -33,7 +33,6 @@ export function CambioNivelAutomatizacion({ empresa, onCambioExitoso }: CambioNi
   };
 
   const nivelActual = empresa.nivel_automatizacion;
-  const puedeActualizar = nivelActual === 'parcial' && nuevoNivel === 'completa';
 
   return (
     <>

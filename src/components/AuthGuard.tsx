@@ -4,7 +4,7 @@ import { LoginForm } from './LoginForm';
 
 interface AuthGuardProps {
   children: React.ReactNode;
-  allowedRoles?: Array<'Usuario_Ingresos' | 'Usuario_Egresos' | 'Usuario_Completo' | 'Dueño'>;
+  allowedRoles?: Array<'Usuario_Ingresos' | 'Usuario_Egresos' | 'Usuario_Completo' | 'Dueño' | 'Super_Admin' | 'Encargado_Almacén' | 'Secretaria' | 'Empleado_Ruta'>;
 }
 
 export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {

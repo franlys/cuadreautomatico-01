@@ -20,8 +20,7 @@ export function Layout({ children }: LayoutProps) {
   const logout = useAuthStore((state) => state.logout);
   const { 
     nivelAutomatizacion, 
-    hasAutomacionCompleta,
-    hasAutomacionParcial 
+    hasAutomacionCompleta
   } = usePermissions();
 
   return (

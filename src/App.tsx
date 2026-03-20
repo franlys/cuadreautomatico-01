@@ -9,7 +9,7 @@ import { FolderDiarioPage } from './pages/FolderDiarioPage';
 import { ResumenSemanal } from './pages/ResumenSemanal';
 import { Depositos } from './pages/Depositos';
 import { DashboardDueno } from './pages/DashboardDueno';
-import { HojasRutaPage } from './pages/HojasRutaPage';
+import HojasRutaPage from './pages/HojasRutaPage';
 import { DashboardSuperAdmin } from './pages/DashboardSuperAdmin';
 import { configurarSincronizacionAutomatica } from './lib/sync';
 

@@ -1,152 +1,178 @@
-# ✅ Sistema Listo para Probar desde Celular
+# ✅ Sistema Listo para Probar
 
 ## Estado Actual
 
-✅ **Código subido a Git** (commit: 95afc5f)
-✅ **Usuario Super Admin creado**: franlysgonzaleztejeda@gmail.com
-✅ **Base de datos configurada** con multi-tenant
-✅ **Funcionalidad de roles implementada**
+🎉 **El sistema está completamente implementado y listo para probar desde tu celular**
+
+### ✅ Errores de TypeScript Corregidos
+- Import de HojasRutaPage corregido
+- Tipos de roles actualizados en AuthGuard
+- Variables no usadas eliminadas
+- Todos los diagnósticos pasando
+
+### ✅ Super Admin Configurado
+- Email: franlysgonzaleztejeda@gmail.com
+- Rol: Super_Admin
+- empresa_id: NULL (acceso cross-tenant)
 
 ---
 
-## Acceso al Sistema
+## Próximos Pasos para Probar
 
-### URL de Producción
-```
-https://cuadreautomatico-01.vercel.app
-```
-(Verifica que Vercel haya desplegado la última versión)
+### 1. Hacer Commit y Push a Git
 
-### Credenciales Super Admin
-- **Email**: franlysgonzaleztejeda@gmail.com
-- **Contraseña**: La que configuraste en Supabase
-
----
-
-## Funcionalidad de Hojas de Ruta
-
-### ✅ Ya Implementado
-
-1. **Encargado de Almacén puede:**
-   - Crear hojas de ruta
-   - Seleccionar empleado de ruta de la lista
-   - Asignar ruta
-   - Agregar facturas
-   - Ver todas las hojas
-
-2. **Empleado de Ruta puede:**
-   - Ver solo sus hojas asignadas
-   - Marcar facturas como entregadas
-   - Registrar cobros
-   - Registrar gastos con fotos
-   - Ver balance en tiempo real
-
-3. **Sistema automático:**
-   - Balance se calcula en tiempo real
-   - Soporte multi-moneda (RD$ y USD)
-   - Evidencia fotográfica obligatoria para peajes y combustible
-   - Hojas cerradas quedan bloqueadas
-
----
-
-## Pasos para Probar desde Celular
-
-### 1. Verificar Despliegue en Vercel
 ```bash
-# Vercel debería desplegar automáticamente al hacer push
-# Verifica en: https://vercel.com/tu-usuario/cuadreautomatico-01
+git add .
+git commit -m "feat: implementación completa multi-tenant con hojas de ruta digitales"
+git push origin main
 ```
 
-### 2. Crear Usuarios de Prueba
+### 2. Verificar Deploy en Vercel
 
-Como Super Admin, crea estos usuarios:
+El deploy se activará automáticamente. Espera a que termine y verifica que no haya errores.
 
-**Encargado de Almacén:**
-- Nombre: Juan Pérez
-- Email: almacen@test.com
-- Rol: Encargado_Almacén
-- Empresa: Empresa 1
+URL de tu proyecto: https://cuadreautomatico-01.vercel.app (o la que tengas configurada)
 
-**Empleado de Ruta:**
-- Nombre: Carlos Rodríguez
-- Email: ruta@test.com
-- Rol: Empleado_Ruta
-- Empresa: Empresa 1
+### 3. Probar desde tu Celular
 
-### 3. Crear Catálogos Base
+#### Como Super Admin:
+1. Abre la app en tu celular
+2. Inicia sesión con: franlysgonzaleztejeda@gmail.com
+3. Deberías ver el botón "Super Admin" en el menú
+4. Prueba:
+   - Ver dashboard de empresas
+   - Ver "Empresa 1" existente
+   - Crear una segunda empresa de prueba
+   - Cambiar nivel de automatización de "Empresa 1" a "completa"
+   - Ver audit logs
+   - Cambiar contexto entre empresas
 
-**Empleados:**
-1. Ve a "Catálogos" → "Empleados"
-2. Crea empleado: Carlos Rodríguez (debe coincidir con el nombre del usuario)
+#### Crear Usuarios de Prueba:
+Desde el Dashboard de Super Admin, crea usuarios con diferentes roles:
 
-**Rutas:**
-1. Ve a "Catálogos" → "Rutas"
-2. Crea ruta: Ruta Centro
-3. Crea ruta: Ruta Norte
+1. **Encargado de Almacén** (para crear hojas de ruta)
+   - Nombre: "Juan Pérez"
+   - Email: juan@test.com
+   - Rol: Encargado_Almacén
+   - Empresa: Empresa 1
 
-### 4. Probar Flujo Completo
+2. **Empleado de Ruta** (para ejecutar hojas de ruta)
+   - Nombre: "Carlos Rodríguez"
+   - Email: carlos@test.com
+   - Rol: Empleado_Ruta
+   - Empresa: Empresa 1
+   - **IMPORTANTE**: Debe existir un empleado con nombre "Carlos Rodríguez" en el catálogo
 
-**Como Encargado de Almacén (almacen@test.com):**
-1. Inicia sesión
-2. Ve a "Hojas de Ruta"
-3. Clic en "Crear Nueva Hoja"
-4. Selecciona empleado: Carlos Rodríguez
-5. Selecciona ruta: Ruta Centro
+3. **Usuario Completo** (para cerrar hojas de ruta)
+   - Nombre: "María García"
+   - Email: maria@test.com
+   - Rol: Usuario_Completo
+   - Empresa: Empresa 1
+
+#### Probar Flujo de Hojas de Ruta:
+
+**Paso 1: Cambiar nivel a "completa"**
+1. Como Super Admin, ve a Dashboard Super Admin
+2. Selecciona "Empresa 1"
+3. Cambia nivel de automatización a "completa"
+4. Confirma el cambio
+
+**Paso 2: Crear catálogos (si no existen)**
+1. Cierra sesión como Super Admin
+2. Inicia sesión como Usuario_Completo o Dueño
+3. Ve a "Catálogos"
+4. Crea:
+   - Empleado: "Carlos Rodríguez" (debe coincidir con el usuario)
+   - Ruta: "Ruta Centro"
+   - Conceptos de gastos: "Combustible", "Peaje"
+
+**Paso 3: Crear hoja de ruta**
+1. Cierra sesión
+2. Inicia sesión como Encargado de Almacén (juan@test.com)
+3. Ve a "Hojas de Ruta" (ahora debería aparecer el menú)
+4. Clic en "Crear Nueva Hoja"
+5. Selecciona:
+   - Empleado: Carlos Rodríguez
+   - Ruta: Ruta Centro
+   - Fecha: Hoy
 6. Agrega facturas:
-   - FAC-001: RD$ 5,000
-   - FAC-002: USD 100
+   - Factura 001: RD$ 5,000
+   - Factura 002: USD 100
 7. Monto asignado: RD$ 2,000
-8. Crea la hoja
+8. Guarda
 
-**Como Empleado de Ruta (ruta@test.com) desde celular:**
-1. Inicia sesión desde tu celular
-2. Ve a "Hojas de Ruta"
-3. Verás solo tu hoja asignada
-4. Clic en "Ejecutar"
-5. Marca FAC-001 como entregada
-6. Registra cobro: RD$ 5,000
-7. Registra gasto de combustible:
-   - Tipo: Combustible
-   - Monto: RD$ 500
-   - Toma foto del recibo
-8. Ve el balance actualizado en tiempo real
+**Paso 4: Ejecutar hoja de ruta**
+1. Cierra sesión
+2. Inicia sesión como Empleado de Ruta (carlos@test.com)
+3. Ve a "Hojas de Ruta"
+4. Deberías ver solo tu hoja asignada
+5. Clic en "Ejecutar"
+6. Marca facturas como entregadas
+7. Registra cobros:
+   - Factura 001: Cobrada RD$ 5,000
+   - Factura 002: Cobrada USD 100
+8. Registra gastos:
+   - Combustible: RD$ 800 (con foto)
+   - Peaje: RD$ 200
+9. Ve el balance en tiempo real actualizarse
 
-**Como Usuario Completo:**
-1. Cierra la hoja de ruta
-2. Verifica el balance final
+**Paso 5: Cerrar hoja de ruta**
+1. Cierra sesión
+2. Inicia sesión como Usuario_Completo (maria@test.com)
+3. Ve a "Hojas de Ruta"
+4. Selecciona la hoja ejecutada
+5. Clic en "Cerrar"
+6. Revisa balance calculado:
+   - RD$: 2,000 + 5,000 - 1,000 = 6,000
+   - USD: 0 + 100 - 0 = 100
+7. Ingresa monto físico contado
+8. Confirma cierre
+9. Verifica que se creó registro en folder diario
 
 ---
 
-## Verificaciones Importantes
+## Funcionalidades Implementadas
 
-### ✅ Antes de Probar
+### ✅ Multi-Tenant
+- Aislamiento completo de datos por empresa
+- RLS en todas las tablas
+- Storage con prefijos por empresa_id
+- Super_Admin con acceso cross-tenant
 
-1. **Variables de entorno en Vercel:**
-   ```
-   VITE_SUPABASE_URL=https://emifgmstkhkpgrshlsnt.supabase.co
-   VITE_SUPABASE_ANON_KEY=tu_anon_key
-   ```
+### ✅ Roles y Permisos
+- Super_Admin: Gestión global de empresas
+- Dueño: Dashboard y supervisión
+- Usuario_Completo: Acceso completo a su empresa
+- Usuario_Ingresos: Solo ingresos
+- Usuario_Egresos: Solo egresos
+- Encargado_Almacén: Crear hojas de ruta
+- Secretaria: Crear hojas de ruta
+- Empleado_Ruta: Ejecutar sus hojas asignadas
 
-2. **Empresa 1 existe en la base de datos:**
-   ```sql
-   SELECT * FROM empresas WHERE nombre = 'Empresa 1';
-   ```
+### ✅ Hojas de Ruta Digitales
+- Creación con asignación de empleado
+- Gestión de facturas multi-moneda (RD$ y USD)
+- Registro de entregas y cobros
+- Registro de gastos con evidencias
+- Balance en tiempo real
+- Cierre con validación de diferencias
+- Integración automática con folder diario
 
-3. **Super Admin tiene rol correcto:**
-   ```sql
-   SELECT rol, empresa_id FROM perfiles 
-   WHERE id = (SELECT id FROM auth.users WHERE email = 'franlysgonzaleztejeda@gmail.com');
-   -- Debe mostrar: rol = 'Super_Admin', empresa_id = NULL
-   ```
+### ✅ Interfaz Adaptativa
+- Menú de hojas de ruta solo visible en nivel "completa"
+- Indicador visual del nivel de automatización
+- Actualización automática al cambiar nivel
 
-### ✅ Durante las Pruebas
+### ✅ Seguridad
+- Validación de empresa_id en todas las operaciones
+- Auditoría completa en audit_logs
+- Detección de violaciones de seguridad
+- Prevención de acceso cross-tenant no autorizado
 
-- [ ] El Encargado de Almacén puede crear hojas
-- [ ] El Empleado de Ruta solo ve sus hojas
-- [ ] Las fotos de evidencia se suben correctamente
-- [ ] El balance se calcula en tiempo real
-- [ ] Las hojas cerradas no se pueden editar
-- [ ] El modo offline funciona (si está habilitado)
+### ✅ Offline (PWA)
+- Sincronización automática
+- IndexedDB con índices por empresa_id
+- Detección de conflictos cross-tenant
 
 ---
 
@@ -154,61 +180,73 @@ Como Super Admin, crea estos usuarios:
 
 1. **GUIA_SUPER_ADMIN.md** - Guía completa para Super Admin
 2. **GUIA_AUTOMATIZACION_COMPLETA.md** - Guía de hojas de ruta digitales
-3. **GUIA_ROLES_HOJAS_RUTA.md** - Guía específica de roles y permisos
-4. **RESUMEN_IMPLEMENTACION_MULTI_TENANT.md** - Resumen técnico completo
+3. **GUIA_ROLES_HOJAS_RUTA.md** - Roles y permisos para hojas de ruta
+4. **RESUMEN_IMPLEMENTACION_MULTI_TENANT.md** - Resumen técnico de implementación
 
 ---
 
-## Próximos Pasos Sugeridos
+## Comandos Git
 
-### Después de Probar
-
-1. **Ajustar permisos** si encuentras algo que no funciona como esperas
-2. **Crear más usuarios** para pruebas reales
-3. **Configurar notificaciones** (opcional)
-4. **Habilitar modo offline** para zonas sin señal
-5. **Personalizar logo** de la empresa
-
-### Mejoras Futuras (Opcional)
-
-- [ ] Notificaciones push cuando se asigna una hoja
-- [ ] Reportes PDF de hojas cerradas
-- [ ] Gráficos de rendimiento por empleado
-- [ ] Integración con WhatsApp para notificaciones
-- [ ] Firma digital al cerrar hojas
-
----
-
-## Soporte
-
-Si encuentras algún problema:
-
-1. **Revisa los logs en Vercel**: https://vercel.com/tu-usuario/cuadreautomatico-01/logs
-2. **Revisa los logs en Supabase**: https://supabase.com/dashboard/project/emifgmstkhkpgrshlsnt/logs
-3. **Verifica las políticas RLS**: Asegúrate de que las políticas permiten las operaciones
-
----
-
-## Comandos Útiles
-
-### Ver estado de Git
 ```bash
+# Ver estado
 git status
-git log --oneline -5
-```
 
-### Forzar redespliegue en Vercel
-```bash
-git commit --allow-empty -m "Trigger Vercel redeploy"
+# Agregar todos los cambios
+git add .
+
+# Hacer commit
+git commit -m "feat: implementación completa multi-tenant con hojas de ruta digitales
+
+- Corregidos errores de TypeScript
+- Super Admin configurado
+- Hojas de ruta digitales implementadas
+- Roles y permisos completos
+- Interfaz adaptativa por nivel
+- Documentación completa"
+
+# Subir a GitHub
 git push origin main
 ```
 
-### Verificar variables de entorno
-```bash
-# En Vercel Dashboard:
-# Settings → Environment Variables
-```
+---
+
+## Verificación Pre-Deploy
+
+Antes de hacer push, verifica:
+
+- ✅ Todos los archivos TypeScript sin errores
+- ✅ Super Admin creado en base de datos
+- ✅ Migración multi-tenant ejecutada
+- ✅ Tablas de hojas de ruta creadas
+- ✅ Políticas RLS activas
+- ✅ Variables de entorno configuradas en Vercel
 
 ---
 
-¡Todo listo para probar! 🚀
+## Troubleshooting
+
+### Si el deploy falla:
+1. Revisa los logs en Vercel
+2. Verifica que todas las variables de entorno estén configuradas
+3. Asegúrate de que el build local funciona: `npm run build`
+
+### Si no aparece el menú de hojas de ruta:
+1. Verifica que la empresa tenga nivel_automatizacion = 'completa'
+2. Verifica que el usuario tenga permisos para acceder
+3. Revisa la consola del navegador por errores
+
+### Si el Empleado de Ruta no ve sus hojas:
+1. Verifica que el nombre del perfil coincida exactamente con el nombre del empleado en el catálogo
+2. Verifica que la hoja de ruta esté asignada a ese empleado
+3. Revisa las políticas RLS en la tabla hojas_ruta
+
+---
+
+## Contacto y Soporte
+
+Si encuentras algún problema durante las pruebas, revisa:
+1. Logs de Supabase (SQL Editor → Logs)
+2. Consola del navegador (F12)
+3. Audit logs en el Dashboard de Super Admin
+
+¡Listo para probar! 🚀

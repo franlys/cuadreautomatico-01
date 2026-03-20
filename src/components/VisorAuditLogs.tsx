@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import type { AuditLog, Perfil } from '../types';
+import type { AuditLog } from '../types';
 
 interface VisorAuditLogsProps {
   empresaId?: string;
