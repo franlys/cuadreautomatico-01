@@ -77,7 +77,7 @@ function MainApp() {
             </button>
             
             {/* Dashboard Super Admin - solo visible para Super_Admin */}
-            {esSuperAdmin && canAccessRoute('/super-admin') && (
+            {esSuperAdmin && (
               <button
                 onClick={() => setVistaActual('super-admin')}
                 className={`px-4 py-2 text-sm font-medium rounded-md ${
@@ -90,84 +90,89 @@ function MainApp() {
               </button>
             )}
             
-            {/* Dashboard Dueño */}
-            {esDueno && canAccessRoute('/dashboard') && (
-              <button
-                onClick={() => setVistaActual('dashboard')}
-                className={`px-4 py-2 text-sm font-medium rounded-md ${
-                  vistaActual === 'dashboard'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Dashboard
-              </button>
-            )}
-            
-            {/* Hojas de Ruta - solo visible en automatización completa (Req 18.2) */}
-            {hasAutomacionCompleta() && canAccessRoute('/hojas-ruta') && (
-              <button
-                onClick={() => setVistaActual('hojas-ruta')}
-                className={`px-4 py-2 text-sm font-medium rounded-md ${
-                  vistaActual === 'hojas-ruta'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                🚀 Hojas de Ruta
-              </button>
-            )}
-            
-            {canAccessRoute('/folder') && (
-              <button
-                onClick={() => setVistaActual('folder')}
-                className={`px-4 py-2 text-sm font-medium rounded-md ${
-                  vistaActual === 'folder'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Folder Diario
-              </button>
-            )}
-            
-            {canAccessRoute('/resumen') && (
-              <button
-                onClick={() => setVistaActual('resumen')}
-                className={`px-4 py-2 text-sm font-medium rounded-md ${
-                  vistaActual === 'resumen'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Resumen Semanal
-              </button>
-            )}
-            
-            {canAccessRoute('/depositos') && (
-              <button
-                onClick={() => setVistaActual('depositos')}
-                className={`px-4 py-2 text-sm font-medium rounded-md ${
-                  vistaActual === 'depositos'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Depósitos
-              </button>
-            )}
-            
-            {canAccessRoute('/catalogos') && (
-              <button
-                onClick={() => setVistaActual('catalogos')}
-                className={`px-4 py-2 text-sm font-medium rounded-md ${
-                  vistaActual === 'catalogos'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Catálogos
-              </button>
+            {/* Menús operativos - NO visibles para Super_Admin */}
+            {!esSuperAdmin && (
+              <>
+                {/* Dashboard Dueño */}
+                {esDueno && canAccessRoute('/dashboard') && (
+                  <button
+                    onClick={() => setVistaActual('dashboard')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md ${
+                      vistaActual === 'dashboard'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Dashboard
+                  </button>
+                )}
+                
+                {/* Hojas de Ruta - solo visible en automatización completa (Req 18.2) */}
+                {hasAutomacionCompleta() && canAccessRoute('/hojas-ruta') && (
+                  <button
+                    onClick={() => setVistaActual('hojas-ruta')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md ${
+                      vistaActual === 'hojas-ruta'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    🚀 Hojas de Ruta
+                  </button>
+                )}
+                
+                {canAccessRoute('/folder') && (
+                  <button
+                    onClick={() => setVistaActual('folder')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md ${
+                      vistaActual === 'folder'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Folder Diario
+                  </button>
+                )}
+                
+                {canAccessRoute('/resumen') && (
+                  <button
+                    onClick={() => setVistaActual('resumen')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md ${
+                      vistaActual === 'resumen'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Resumen Semanal
+                  </button>
+                )}
+                
+                {canAccessRoute('/depositos') && (
+                  <button
+                    onClick={() => setVistaActual('depositos')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md ${
+                      vistaActual === 'depositos'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Depósitos
+                  </button>
+                )}
+                
+                {canAccessRoute('/catalogos') && (
+                  <button
+                    onClick={() => setVistaActual('catalogos')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md ${
+                      vistaActual === 'catalogos'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Catálogos
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>
