@@ -4,6 +4,20 @@ import * as XLSX from 'xlsx';
 import XLSXStyle from 'xlsx-js-style';
 import type { SemanaLaboral, FolderDiario, Registro } from '../types';
 
+const MESES_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+/** "2026-03-02" → "2 marzo 2026" */
+function fechaTexto(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${d} ${MESES_ES[m - 1]} ${y}`;
+}
+
+/** "2026-03-02" → "3/2/2026" */
+function fechaCorta(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${m}/${d}/${y}`;
+}
+
 interface DatosExportacion {
   semana: SemanaLaboral;
   folders: FolderDiario[];
@@ -33,7 +47,7 @@ export function exportarPDF(datos: DatosExportacion, rol: string, descargar: boo
     // Subtítulo
     doc.setFontSize(12);
     doc.text(
-      `ENTRADA DE DIARIOS SEMANA DEL ${datos.semana.fecha_inicio} al ${datos.semana.fecha_fin}`,
+      `ENTRADA DE DIARIOS SEMANA DEL ${fechaTexto(datos.semana.fecha_inicio)} al ${fechaTexto(datos.semana.fecha_fin)}`,
       pageWidth / 2,
       25,
       { align: 'center' }
@@ -121,7 +135,7 @@ export function exportarPDF(datos: DatosExportacion, rol: string, descargar: boo
     // Tabla única de registros
     const tiposFilas: Array<'ingreso' | 'egreso'> = registrosConsolidados.map(r => r.tipo);
     const tablaData = registrosConsolidados.map(r => [
-      r.fecha,
+      fechaCorta(r.fecha),
       [r.concepto, r.empleado, r.ruta].filter(Boolean).join(' - '),
       r.tipo === 'ingreso' ? r.monto.toFixed(2) : '',
       r.tipo === 'egreso' ? r.monto.toFixed(2) : '',
@@ -275,19 +289,31 @@ export function exportarXLSX(datos: DatosExportacion, rol: string, descargar: bo
     }
 
     // ── Hoja principal: Registros ─────────────────────────────────────────
-    // Filas de datos como AOA
     const nombreEmpresa = datos.nombreEmpresa || 'Reporte Semanal';
-    const subtitulo = `ENTRADA DE DIARIOS SEMANA DEL ${datos.semana.fecha_inicio} al ${datos.semana.fecha_fin}`;
+    const subtituloXLSX = `ENTRADA DE DIARIOS SEMANA DEL ${fechaTexto(datos.semana.fecha_inicio)} al ${fechaTexto(datos.semana.fecha_fin)}`;
+
+    // Estructura igual al template:
+    // Fila 1 (r0): vacía
+    // Fila 2 (r1): vacía
+    // Fila 3 (r2): nombre empresa  ← merged r2:r3, cols A:E
+    // Fila 4 (r3): parte del merge del nombre
+    // Fila 5 (r4): subtítulo        ← merged r4, cols A:E
+    // Fila 6 (r5): encabezados de columna
+    // Fila 7+ (r6+): datos
+    const DATOS_START_ROW = 6; // índice 0-based donde empiezan los datos
 
     const aoa: any[][] = [
-      [nombreEmpresa, '', '', '', ''],   // fila 0 → A1
-      [subtitulo,     '', '', '', ''],   // fila 1 → A2
-      ['FECHAS', 'DESCRIPCION', 'INGRESO', 'EGRESO', 'SALDO'], // fila 2 → A3
+      ['', '', '', '', ''],                           // r0 - vacía
+      ['', '', '', '', ''],                           // r1 - vacía
+      [nombreEmpresa, '', '', '', ''],                // r2 - nombre empresa
+      ['', '', '', '', ''],                           // r3 - parte del merge
+      [subtituloXLSX, '', '', '', ''],                // r4 - subtítulo
+      ['FECHAS', 'DESCRIPCION', 'INGRESO', 'EGRESO', 'SALDO'], // r5 - headers
     ];
 
     for (const r of consolidados) {
       aoa.push([
-        r.fecha,
+        fechaCorta(r.fecha),
         r.descripcion,
         r.tipo === 'ingreso' ? r.monto : '',
         r.tipo === 'egreso'  ? r.monto : '',
@@ -297,42 +323,52 @@ export function exportarXLSX(datos: DatosExportacion, rol: string, descargar: bo
 
     const wsReg = XLSXStyle.utils.aoa_to_sheet(aoa);
 
-    // Merges para título y subtítulo
+    // Merges
     wsReg['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
-      { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } },
+      { s: { r: 2, c: 0 }, e: { r: 3, c: 4 } }, // nombre empresa (2 filas)
+      { s: { r: 4, c: 0 }, e: { r: 4, c: 4 } }, // subtítulo
     ];
 
     // Anchos de columna
     wsReg['!cols'] = [
-      { wch: 14 },  // FECHAS
-      { wch: 50 },  // DESCRIPCION
+      { wch: 12 },  // FECHAS
+      { wch: 52 },  // DESCRIPCION
       { wch: 16 },  // INGRESO
-      { wch: 16 },  // EGRESO
-      { wch: 16 },  // SALDO
+      { wch: 14 },  // EGRESO
+      { wch: 14 },  // SALDO
     ];
 
-    // Altura de filas de encabezado
-    wsReg['!rows'] = [{ hpt: 28 }, { hpt: 18 }];
+    // Alturas de fila
+    wsReg['!rows'] = [
+      { hpt: 12 },  // r0 vacía
+      { hpt: 12 },  // r1 vacía
+      { hpt: 30 },  // r2 empresa (mitad del bloque 2 filas)
+      { hpt: 30 },  // r3 empresa (segunda mitad)
+      { hpt: 20 },  // r4 subtítulo
+      { hpt: 18 },  // r5 headers
+    ];
 
-    // Aplicar estilos a título y subtítulo
-    wsReg['A1'].s = styleTitle;
-    wsReg['A2'].s = styleSubtitle;
+    // Estilos: título empresa (r2 → A3 en 1-based)
+    if (!wsReg['A3']) wsReg['A3'] = { v: nombreEmpresa, t: 's' };
+    wsReg['A3'].s = styleTitle;
 
-    // Aplicar estilos a encabezados de columna (fila 3)
-    ['A3', 'B3', 'C3', 'D3', 'E3'].forEach(addr => {
+    // Estilos: subtítulo (r4 → A5)
+    if (!wsReg['A5']) wsReg['A5'] = { v: subtituloXLSX, t: 's' };
+    wsReg['A5'].s = styleSubtitle;
+
+    // Estilos: headers (r5 → fila 6)
+    ['A6', 'B6', 'C6', 'D6', 'E6'].forEach(addr => {
       if (wsReg[addr]) wsReg[addr].s = styleHeader;
     });
 
-    // Aplicar estilos a filas de datos
+    // Estilos: filas de datos
     const COLS = ['A', 'B', 'C', 'D', 'E'];
     consolidados.forEach((r, i) => {
-      const rowNum = i + 4; // datos empiezan en fila 4
+      const rowNum = DATOS_START_ROW + 1 + i; // 1-based
       const fill = r.tipo === 'ingreso' ? FILL_YELLOW : FILL_WHITE;
       COLS.forEach((col, ci) => {
         const addr = `${col}${rowNum}`;
         if (!wsReg[addr]) wsReg[addr] = { v: '', t: 's' };
-        // Alineación: números a la derecha (cols 2,3,4)
         const alignment = ci >= 2 ? ALIGN_RIGHT : { vertical: 'center' };
         wsReg[addr].s = { fill, border: borderThin, alignment };
       });
@@ -343,7 +379,7 @@ export function exportarXLSX(datos: DatosExportacion, rol: string, descargar: bo
     // ── Hoja Resumen ──────────────────────────────────────────────────────
     const resumenData: any[][] = [
       [nombreEmpresa],
-      [subtitulo],
+      [subtituloXLSX],
       [],
       ['Concepto', 'Monto'],
       ['Total Ingresos', datos.semana.total_ingresos?.toFixed(2) || '0.00'],
