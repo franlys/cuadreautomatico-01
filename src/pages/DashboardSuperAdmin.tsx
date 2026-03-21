@@ -319,10 +319,11 @@ export function DashboardSuperAdmin() {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold mb-6">Crear Nueva Empresa</h2>
             <FormularioEmpresa
-              onEmpresaCreada={() => {
+              onSuccess={() => {
                 cargarEmpresas();
                 setVistaActual('lista');
               }}
+              onCancel={() => setVistaActual('lista')}
             />
           </div>
         )}
