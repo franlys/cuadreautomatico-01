@@ -51,11 +51,23 @@ export function BotonesExportacion({ semana }: BotonesExportacionProps) {
         depositos = depositosData || [];
       }
 
+      // Cargar nombre de empresa
+      let nombreEmpresa: string | undefined;
+      if (perfil?.empresa_id) {
+        const { data: empresaData } = await supabase
+          .from('empresas')
+          .select('nombre')
+          .eq('id', perfil.empresa_id)
+          .single();
+        nombreEmpresa = empresaData?.nombre;
+      }
+
       return {
         semana,
         folders: folders || [],
         registrosPorFolder,
         depositos,
+        nombreEmpresa,
       };
     } catch (err: any) {
       throw new Error(`Error al cargar datos: ${err.message}`);

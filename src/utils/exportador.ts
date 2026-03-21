@@ -13,6 +13,7 @@ interface DatosExportacion {
     banco: string | null;
     nota: string | null;
   }>;
+  nombreEmpresa?: string;
 }
 
 /**
@@ -24,39 +25,39 @@ export function exportarPDF(datos: DatosExportacion, rol: string, descargar: boo
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     
-    // Título
+    // Título (nombre de empresa)
     doc.setFontSize(18);
-    doc.text('Reporte Semanal - Cuadre Automático', pageWidth / 2, 15, { align: 'center' });
-    
-    // Período
+    doc.text(datos.nombreEmpresa || 'Reporte Semanal', pageWidth / 2, 15, { align: 'center' });
+
+    // Subtítulo
     doc.setFontSize(12);
     doc.text(
-      `Período: ${datos.semana.fecha_inicio} al ${datos.semana.fecha_fin}`,
+      `ENTRADA DE DIARIOS SEMANA DEL ${datos.semana.fecha_inicio} al ${datos.semana.fecha_fin}`,
       pageWidth / 2,
       25,
       { align: 'center' }
     );
-    
+
     let yPos = 35;
-    
+
     // Resumen semanal
     doc.setFontSize(14);
     doc.text('Resumen Semanal', 14, yPos);
     yPos += 10;
-    
+
     const resumenData = [
       ['Total Ingresos', `$${datos.semana.total_ingresos?.toFixed(2) || '0.00'}`],
       ['Total Egresos', `$${datos.semana.total_egresos?.toFixed(2) || '0.00'}`],
       ['Balance Neto', `$${datos.semana.balance_neto?.toFixed(2) || '0.00'}`],
     ];
-    
+
     if (rol === 'Dueño') {
       resumenData.push(
         ['Total Depositado', `$${datos.semana.total_depositos?.toFixed(2) || '0.00'}`],
         ['Saldo Disponible', `$${datos.semana.saldo_disponible?.toFixed(2) || '0.00'}`]
       );
     }
-    
+
     autoTable(doc, {
       startY: yPos,
       head: [['Concepto', 'Monto']],
@@ -64,63 +65,94 @@ export function exportarPDF(datos: DatosExportacion, rol: string, descargar: boo
       theme: 'grid',
       headStyles: { fillColor: [79, 70, 229] },
     });
-    
+
     yPos = (doc as any).lastAutoTable.finalY + 15;
-    
-    // Desglose por día
-    doc.setFontSize(14);
-    doc.text('Desglose por Día', 14, yPos);
-    yPos += 10;
-    
+
+    // Consolidar todos los registros en orden cronológico
+    const registrosConsolidados: Array<{
+      fecha: string;
+      tipo: 'ingreso' | 'egreso';
+      concepto: string;
+      empleado: string;
+      ruta: string;
+      monto: number;
+      created_at: string;
+      saldoAcumulado: number;
+    }> = [];
+
     for (const folder of datos.folders) {
       const registros = datos.registrosPorFolder[folder.id] || [];
-      
-      // Filtrar registros según el rol
       const registrosFiltrados = registros.filter(r => {
         if (rol === 'Dueño') return true;
         if (rol === 'Usuario_Ingresos') return r.tipo === 'ingreso';
         if (rol === 'Usuario_Egresos') return r.tipo === 'egreso';
         return false;
       });
-      
-      if (registrosFiltrados.length === 0) continue;
-      
-      // Verificar si necesitamos una nueva página
-      if (yPos > 250) {
-        doc.addPage();
-        yPos = 20;
+      for (const r of registrosFiltrados) {
+        registrosConsolidados.push({
+          fecha: folder.fecha_laboral,
+          tipo: r.tipo,
+          concepto: r.concepto,
+          empleado: r.empleado,
+          ruta: r.ruta,
+          monto: r.monto,
+          created_at: r.created_at,
+          saldoAcumulado: 0,
+        });
       }
-      
-      // Encabezado del día
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`${folder.fecha_laboral} - Balance: $${folder.balance_diario?.toFixed(2) || '0.00'}`, 14, yPos);
-      doc.setFont('helvetica', 'normal');
-      yPos += 7;
-      
-      // Tabla de registros
-      const registrosData = registrosFiltrados.map(r => [
-        r.tipo === 'ingreso' ? 'Ingreso' : 'Egreso',
-        r.concepto,
-        r.empleado,
-        r.ruta,
-        `$${r.monto.toFixed(2)}`,
-      ]);
-      
-      autoTable(doc, {
-        startY: yPos,
-        head: [['Tipo', 'Concepto', 'Empleado', 'Ruta', 'Monto']],
-        body: registrosData,
-        theme: 'striped',
-        headStyles: { fillColor: [79, 70, 229] },
-        columnStyles: {
-          0: { cellWidth: 25 },
-          4: { halign: 'right' },
-        },
-      });
-      
-      yPos = (doc as any).lastAutoTable.finalY + 10;
     }
+
+    // Ordenar por fecha y luego por created_at
+    registrosConsolidados.sort((a, b) => {
+      const fechaDiff = a.fecha.localeCompare(b.fecha);
+      if (fechaDiff !== 0) return fechaDiff;
+      return a.created_at.localeCompare(b.created_at);
+    });
+
+    // Calcular saldo acumulado
+    let saldoAcumulado = 0;
+    for (const r of registrosConsolidados) {
+      if (r.tipo === 'ingreso') saldoAcumulado += r.monto;
+      else saldoAcumulado -= r.monto;
+      r.saldoAcumulado = saldoAcumulado;
+    }
+
+    // Tabla única de registros
+    const tiposFilas: Array<'ingreso' | 'egreso'> = registrosConsolidados.map(r => r.tipo);
+    const tablaData = registrosConsolidados.map(r => [
+      r.fecha,
+      [r.concepto, r.empleado, r.ruta].filter(Boolean).join(' - '),
+      r.tipo === 'ingreso' ? r.monto.toFixed(2) : '',
+      r.tipo === 'egreso' ? r.monto.toFixed(2) : '',
+      r.saldoAcumulado.toFixed(2),
+    ]);
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [['FECHAS', 'DESCRIPCION', 'INGRESO', 'EGRESO', 'SALDO']],
+      body: tablaData,
+      theme: 'grid',
+      headStyles: { fillColor: [79, 70, 229] },
+      columnStyles: {
+        0: { cellWidth: 28 },
+        1: { cellWidth: 72 },
+        2: { cellWidth: 22, halign: 'right' },
+        3: { cellWidth: 22, halign: 'right' },
+        4: { cellWidth: 24, halign: 'right' },
+      },
+      didParseCell: (data) => {
+        if (data.section === 'body') {
+          const tipo = tiposFilas[data.row.index];
+          if (tipo === 'ingreso') {
+            data.cell.styles.fillColor = [255, 255, 0];
+          } else {
+            data.cell.styles.fillColor = [255, 255, 255];
+          }
+        }
+      },
+    });
+
+    yPos = (doc as any).lastAutoTable.finalY + 10;
     
     // Depósitos (solo para Dueño)
     if (rol === 'Dueño' && datos.depositos && datos.depositos.length > 0) {
