@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
+import { supabase } from '../lib/supabase';
 import type { NivelAutomatizacion } from '../types';
 
 /**
@@ -12,18 +14,46 @@ import type { NivelAutomatizacion } from '../types';
  */
 export function usePermissions() {
   const { perfil } = useAuth();
+  const [nivelAutomatizacion, setNivelAutomatizacion] = useState<NivelAutomatizacion>('parcial');
 
   /**
    * Obtiene el nivel de automatización de la empresa del usuario
-   * TODO: Implementar cuando se agregue empresa al perfil
    */
-  const getNivelAutomatizacion = (): NivelAutomatizacion => {
-    // Por ahora retornamos 'parcial' como default
-    // Esto se actualizará cuando perfil incluya empresa con nivel_automatizacion
-    return 'parcial';
-  };
+  useEffect(() => {
+    const obtenerNivelAutomatizacion = async () => {
+      if (!perfil) return;
 
-  const nivelAutomatizacion = getNivelAutomatizacion();
+      // Super_Admin no tiene empresa, puede ver todo
+      if (perfil.rol === 'Super_Admin') {
+        setNivelAutomatizacion('completa');
+        return;
+      }
+
+      // Si el usuario tiene empresa_id, obtener el nivel de la empresa
+      if (perfil.empresa_id) {
+        try {
+          const { data: empresa, error } = await supabase
+            .from('empresas')
+            .select('nivel_automatizacion')
+            .eq('id', perfil.empresa_id)
+            .single();
+
+          if (error) {
+            console.error('Error al obtener nivel de automatización:', error);
+            return;
+          }
+
+          if (empresa) {
+            setNivelAutomatizacion(empresa.nivel_automatizacion);
+          }
+        } catch (err) {
+          console.error('Error al consultar empresa:', err);
+        }
+      }
+    };
+
+    obtenerNivelAutomatizacion();
+  }, [perfil]);
 
   /**
    * Verifica si el usuario tiene permiso para realizar una acción sobre un recurso
