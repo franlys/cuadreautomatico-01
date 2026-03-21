@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import XLSXStyle from 'xlsx-js-style';
 import type { SemanaLaboral, FolderDiario, Registro } from '../types';
 
 interface DatosExportacion {
@@ -206,90 +207,179 @@ export function exportarPDF(datos: DatosExportacion, rol: string, descargar: boo
  */
 export function exportarXLSX(datos: DatosExportacion, rol: string, descargar: boolean = true): Blob {
   try {
-    const workbook = XLSX.utils.book_new();
-    
-    // Hoja 1: Resumen
-    const resumenData = [
-      ['Reporte Semanal - Cuadre Automático'],
-      [`Período: ${datos.semana.fecha_inicio} al ${datos.semana.fecha_fin}`],
+    const workbook = XLSXStyle.utils.book_new();
+
+    // ── Estilos reutilizables ──────────────────────────────────────────────
+    const FILL_GREEN  = { patternType: 'solid', fgColor: { rgb: 'D5E8D4' } };
+    const FILL_YELLOW = { patternType: 'solid', fgColor: { rgb: 'FFFF00' } };
+    const FILL_WHITE  = { patternType: 'solid', fgColor: { rgb: 'FFFFFF' } };
+    const ALIGN_CENTER = { horizontal: 'center', vertical: 'center' };
+    const ALIGN_RIGHT  = { horizontal: 'right',  vertical: 'center' };
+
+    const styleTitle: any = {
+      font: { bold: true, italic: true, sz: 16 },
+      fill: FILL_GREEN,
+      alignment: ALIGN_CENTER,
+    };
+    const styleSubtitle: any = {
+      font: { sz: 11 },
+      fill: FILL_GREEN,
+      alignment: ALIGN_CENTER,
+    };
+    const styleHeader: any = {
+      font: { bold: true },
+      alignment: ALIGN_CENTER,
+      border: {
+        top:    { style: 'thin' }, bottom: { style: 'thin' },
+        left:   { style: 'thin' }, right:  { style: 'thin' },
+      },
+    };
+    const borderThin: any = {
+      top:    { style: 'thin' }, bottom: { style: 'thin' },
+      left:   { style: 'thin' }, right:  { style: 'thin' },
+    };
+
+    // ── Consolidar registros (mismo orden que PDF) ────────────────────────
+    const consolidados: Array<{
+      fecha: string; tipo: 'ingreso' | 'egreso';
+      descripcion: string; monto: number; created_at: string; saldo: number;
+    }> = [];
+
+    for (const folder of datos.folders) {
+      const registros = datos.registrosPorFolder[folder.id] || [];
+      const filtrados = registros.filter(r => {
+        if (rol === 'Dueño') return true;
+        if (rol === 'Usuario_Ingresos') return r.tipo === 'ingreso';
+        if (rol === 'Usuario_Egresos') return r.tipo === 'egreso';
+        return false;
+      });
+      for (const r of filtrados) {
+        consolidados.push({
+          fecha: folder.fecha_laboral,
+          tipo: r.tipo,
+          descripcion: [r.concepto, r.empleado, r.ruta].filter(Boolean).join(' - '),
+          monto: r.monto,
+          created_at: r.created_at,
+          saldo: 0,
+        });
+      }
+    }
+    consolidados.sort((a, b) => {
+      const d = a.fecha.localeCompare(b.fecha);
+      return d !== 0 ? d : a.created_at.localeCompare(b.created_at);
+    });
+    let saldoAcc = 0;
+    for (const r of consolidados) {
+      saldoAcc += r.tipo === 'ingreso' ? r.monto : -r.monto;
+      r.saldo = saldoAcc;
+    }
+
+    // ── Hoja principal: Registros ─────────────────────────────────────────
+    // Filas de datos como AOA
+    const nombreEmpresa = datos.nombreEmpresa || 'Reporte Semanal';
+    const subtitulo = `ENTRADA DE DIARIOS SEMANA DEL ${datos.semana.fecha_inicio} al ${datos.semana.fecha_fin}`;
+
+    const aoa: any[][] = [
+      [nombreEmpresa, '', '', '', ''],   // fila 0 → A1
+      [subtitulo,     '', '', '', ''],   // fila 1 → A2
+      ['FECHAS', 'DESCRIPCION', 'INGRESO', 'EGRESO', 'SALDO'], // fila 2 → A3
+    ];
+
+    for (const r of consolidados) {
+      aoa.push([
+        r.fecha,
+        r.descripcion,
+        r.tipo === 'ingreso' ? r.monto : '',
+        r.tipo === 'egreso'  ? r.monto : '',
+        r.saldo,
+      ]);
+    }
+
+    const wsReg = XLSXStyle.utils.aoa_to_sheet(aoa);
+
+    // Merges para título y subtítulo
+    wsReg['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } },
+    ];
+
+    // Anchos de columna
+    wsReg['!cols'] = [
+      { wch: 14 },  // FECHAS
+      { wch: 50 },  // DESCRIPCION
+      { wch: 16 },  // INGRESO
+      { wch: 16 },  // EGRESO
+      { wch: 16 },  // SALDO
+    ];
+
+    // Altura de filas de encabezado
+    wsReg['!rows'] = [{ hpt: 28 }, { hpt: 18 }];
+
+    // Aplicar estilos a título y subtítulo
+    wsReg['A1'].s = styleTitle;
+    wsReg['A2'].s = styleSubtitle;
+
+    // Aplicar estilos a encabezados de columna (fila 3)
+    ['A3', 'B3', 'C3', 'D3', 'E3'].forEach(addr => {
+      if (wsReg[addr]) wsReg[addr].s = styleHeader;
+    });
+
+    // Aplicar estilos a filas de datos
+    const COLS = ['A', 'B', 'C', 'D', 'E'];
+    consolidados.forEach((r, i) => {
+      const rowNum = i + 4; // datos empiezan en fila 4
+      const fill = r.tipo === 'ingreso' ? FILL_YELLOW : FILL_WHITE;
+      COLS.forEach((col, ci) => {
+        const addr = `${col}${rowNum}`;
+        if (!wsReg[addr]) wsReg[addr] = { v: '', t: 's' };
+        // Alineación: números a la derecha (cols 2,3,4)
+        const alignment = ci >= 2 ? ALIGN_RIGHT : { vertical: 'center' };
+        wsReg[addr].s = { fill, border: borderThin, alignment };
+      });
+    });
+
+    XLSXStyle.utils.book_append_sheet(workbook, wsReg, 'Registros');
+
+    // ── Hoja Resumen ──────────────────────────────────────────────────────
+    const resumenData: any[][] = [
+      [nombreEmpresa],
+      [subtitulo],
       [],
       ['Concepto', 'Monto'],
       ['Total Ingresos', datos.semana.total_ingresos?.toFixed(2) || '0.00'],
-      ['Total Egresos', datos.semana.total_egresos?.toFixed(2) || '0.00'],
-      ['Balance Neto', datos.semana.balance_neto?.toFixed(2) || '0.00'],
+      ['Total Egresos',  datos.semana.total_egresos?.toFixed(2)  || '0.00'],
+      ['Balance Neto',   datos.semana.balance_neto?.toFixed(2)   || '0.00'],
     ];
-    
     if (rol === 'Dueño') {
       resumenData.push(
         ['Total Depositado', datos.semana.total_depositos?.toFixed(2) || '0.00'],
         ['Saldo Disponible', datos.semana.saldo_disponible?.toFixed(2) || '0.00']
       );
     }
-    
     const wsResumen = XLSX.utils.aoa_to_sheet(resumenData);
-    XLSX.utils.book_append_sheet(workbook, wsResumen, 'Resumen');
-    
-    // Hoja 2: Registros detallados
-    const registrosData: any[][] = [
-      ['Fecha', 'Tipo', 'Concepto', 'Empleado', 'Ruta', 'Monto', 'Balance Diario'],
-    ];
-    
-    for (const folder of datos.folders) {
-      const registros = datos.registrosPorFolder[folder.id] || [];
-      
-      // Filtrar registros según el rol
-      const registrosFiltrados = registros.filter(r => {
-        if (rol === 'Dueño') return true;
-        if (rol === 'Usuario_Ingresos') return r.tipo === 'ingreso';
-        if (rol === 'Usuario_Egresos') return r.tipo === 'egreso';
-        return false;
-      });
-      
-      for (const registro of registrosFiltrados) {
-        registrosData.push([
-          folder.fecha_laboral,
-          registro.tipo === 'ingreso' ? 'Ingreso' : 'Egreso',
-          registro.concepto,
-          registro.empleado,
-          registro.ruta,
-          registro.monto.toFixed(2),
-          folder.balance_diario?.toFixed(2) || '0.00',
-        ]);
-      }
-    }
-    
-    const wsRegistros = XLSX.utils.aoa_to_sheet(registrosData);
-    XLSX.utils.book_append_sheet(workbook, wsRegistros, 'Registros');
-    
-    // Hoja 3: Depósitos (solo para Dueño)
+    XLSXStyle.utils.book_append_sheet(workbook, wsResumen, 'Resumen');
+
+    // ── Hoja Depósitos (solo Dueño) ───────────────────────────────────────
     if (rol === 'Dueño' && datos.depositos && datos.depositos.length > 0) {
-      const depositosData: any[][] = [
-        ['Fecha', 'Banco', 'Nota', 'Monto'],
-      ];
-      
-      for (const deposito of datos.depositos) {
-        depositosData.push([
-          deposito.fecha_deposito,
-          deposito.banco || 'N/A',
-          deposito.nota || '',
-          deposito.monto.toFixed(2),
-        ]);
+      const depositosData: any[][] = [['Fecha', 'Banco', 'Nota', 'Monto']];
+      for (const d of datos.depositos) {
+        depositosData.push([d.fecha_deposito, d.banco || 'N/A', d.nota || '', d.monto.toFixed(2)]);
       }
-      
       const wsDepositos = XLSX.utils.aoa_to_sheet(depositosData);
-      XLSX.utils.book_append_sheet(workbook, wsDepositos, 'Depósitos');
+      XLSXStyle.utils.book_append_sheet(workbook, wsDepositos, 'Depósitos');
     }
-    
-    // Generar Blob
-    const xlsxBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const xlsxBlob = new Blob([xlsxBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    
-    // Descargar si se solicita
+
+    // ── Generar Blob ──────────────────────────────────────────────────────
+    const xlsxBuffer = XLSXStyle.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const xlsxBlob = new Blob([xlsxBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+
     if (descargar) {
       const nombreArchivo = `reporte_${datos.semana.fecha_inicio}_${datos.semana.fecha_fin}.xlsx`;
-      XLSX.writeFile(workbook, nombreArchivo);
+      XLSXStyle.writeFile(workbook, nombreArchivo);
     }
-    
+
     return xlsxBlob;
   } catch (error) {
     console.error('Error al generar XLSX:', error);
