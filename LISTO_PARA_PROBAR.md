@@ -1,252 +1,305 @@
-# ✅ Sistema Listo para Probar
+# ✅ Sistema Listo para Probar desde Móvil
 
 ## Estado Actual
 
-🎉 **El sistema está completamente implementado y listo para probar desde tu celular**
-
-### ✅ Errores de TypeScript Corregidos
-- Import de HojasRutaPage corregido
-- Tipos de roles actualizados en AuthGuard
-- Variables no usadas eliminadas
-- Todos los diagnósticos pasando
-
-### ✅ Super Admin Configurado
-- Email: franlysgonzaleztejeda@gmail.com
-- Rol: Super_Admin
-- empresa_id: NULL (acceso cross-tenant)
+El sistema multi-tenant está completamente implementado y listo para pruebas desde dispositivos móviles. Todas las funcionalidades están operativas.
 
 ---
 
-## Próximos Pasos para Probar
+## ✅ Funcionalidades Implementadas
 
-### 1. Hacer Commit y Push a Git
+### 1. Sistema Multi-Tenant
+- ✅ Empresa 1 creada con todos los datos migrados
+- ✅ Super Admin configurado (franlysgonzaleztejeda@gmail.com)
+- ✅ RLS policies activas en todas las tablas
+- ✅ Aislamiento de datos por empresa_id
+
+### 2. Roles y Permisos
+- ✅ 8 roles implementados con permisos correctos
+- ✅ Menús visibles según rol
+- ✅ Validación de permisos en frontend y backend
+
+### 3. Hojas de Ruta Digitales (CONFIRMADO)
+- ✅ **Encargado de Almacén puede seleccionar empleado de ruta**
+- ✅ **Empleado de Ruta tiene su propio panel para marcar entregas**
+- ✅ Creación de hojas de ruta con asignación de empleados
+- ✅ Ejecución de rutas con registro de entregas y cobros
+- ✅ Registro de gastos con evidencias fotográficas
+- ✅ Balance en tiempo real (RD$ y USD)
+- ✅ Cierre de rutas con validación de montos
+- ✅ Integración automática con folder diario
+
+### 4. Dashboard Super Admin
+- ✅ Gestión de empresas
+- ✅ Creación de usuarios desde UI
+- ✅ Asignación de roles
+- ✅ Cambio de nivel de automatización
+- ✅ Monitoreo de storage
+
+### 5. Seguridad y Auditoría
+- ✅ Validaciones de tenant en todas las operaciones
+- ✅ Audit logs de todas las acciones
+- ✅ Detección de violaciones de seguridad
+
+---
+
+## 🚀 Pasos para Desplegar y Probar
+
+### Paso 1: Commit y Push a Git
 
 ```bash
-git add .
-git commit -m "feat: implementación completa multi-tenant con hojas de ruta digitales"
+# Agregar archivos nuevos
+git add RESUMEN_DEPLOY.md
+git add supabase/diagnostico-empresas.sql
+
+# Commit
+git commit -m "feat: sistema multi-tenant completo con hojas de ruta digitales"
+
+# Push
 git push origin main
 ```
 
-### 2. Verificar Deploy en Vercel
+### Paso 2: Verificar Despliegue en Vercel
 
-El deploy se activará automáticamente. Espera a que termine y verifica que no haya errores.
+1. Ve a https://vercel.com/dashboard
+2. Verifica que el despliegue se complete exitosamente
+3. Anota la URL de producción (ej: https://tu-app.vercel.app)
 
-URL de tu proyecto: https://cuadreautomatico-01.vercel.app (o la que tengas configurada)
+### Paso 3: Probar desde Móvil
 
-### 3. Probar desde tu Celular
+#### A. Probar como Super Admin
 
-#### Como Super Admin:
-1. Abre la app en tu celular
+1. Abre la URL en tu móvil
 2. Inicia sesión con: franlysgonzaleztejeda@gmail.com
-3. Deberías ver el botón "Super Admin" en el menú
-4. Prueba:
-   - Ver dashboard de empresas
-   - Ver "Empresa 1" existente
-   - Crear una segunda empresa de prueba
-   - Cambiar nivel de automatización de "Empresa 1" a "completa"
-   - Ver audit logs
-   - Cambiar contexto entre empresas
+3. Verifica que ves:
+   - ✅ Botón "Inicio"
+   - ✅ Botón "Super Admin"
+   - ❌ NO debes ver menús operativos
 
-#### Crear Usuarios de Prueba:
-Desde el Dashboard de Super Admin, crea usuarios con diferentes roles:
+4. En Super Admin:
+   - ✅ Ver lista de empresas (debe aparecer "Empresa 1")
+   - ✅ Crear usuarios
+   - ✅ Asignar roles
+   - ✅ Cambiar nivel de automatización
 
-1. **Encargado de Almacén** (para crear hojas de ruta)
-   - Nombre: "Juan Pérez"
-   - Email: juan@test.com
-   - Rol: Encargado_Almacén
-   - Empresa: Empresa 1
+#### B. Probar como Encargado de Almacén
 
-2. **Empleado de Ruta** (para ejecutar hojas de ruta)
-   - Nombre: "Carlos Rodríguez"
-   - Email: carlos@test.com
-   - Rol: Empleado_Ruta
-   - Empresa: Empresa 1
-   - **IMPORTANTE**: Debe existir un empleado con nombre "Carlos Rodríguez" en el catálogo
-
-3. **Usuario Completo** (para cerrar hojas de ruta)
-   - Nombre: "María García"
-   - Email: maria@test.com
-   - Rol: Usuario_Completo
-   - Empresa: Empresa 1
-
-#### Probar Flujo de Hojas de Ruta:
-
-**Paso 1: Cambiar nivel a "completa"**
-1. Como Super Admin, ve a Dashboard Super Admin
-2. Selecciona "Empresa 1"
-3. Cambia nivel de automatización a "completa"
-4. Confirma el cambio
-
-**Paso 2: Crear catálogos (si no existen)**
-1. Cierra sesión como Super Admin
-2. Inicia sesión como Usuario_Completo o Dueño
-3. Ve a "Catálogos"
-4. Crea:
-   - Empleado: "Carlos Rodríguez" (debe coincidir con el usuario)
-   - Ruta: "Ruta Centro"
-   - Conceptos de gastos: "Combustible", "Peaje"
-
-**Paso 3: Crear hoja de ruta**
-1. Cierra sesión
-2. Inicia sesión como Encargado de Almacén (juan@test.com)
-3. Ve a "Hojas de Ruta" (ahora debería aparecer el menú)
-4. Clic en "Crear Nueva Hoja"
-5. Selecciona:
-   - Empleado: Carlos Rodríguez
-   - Ruta: Ruta Centro
-   - Fecha: Hoy
-6. Agrega facturas:
-   - Factura 001: RD$ 5,000
-   - Factura 002: USD 100
-7. Monto asignado: RD$ 2,000
-8. Guarda
-
-**Paso 4: Ejecutar hoja de ruta**
-1. Cierra sesión
-2. Inicia sesión como Empleado de Ruta (carlos@test.com)
+1. Crea un usuario con rol "Encargado_Almacén" desde Super Admin
+2. Cierra sesión y entra con ese usuario
 3. Ve a "Hojas de Ruta"
-4. Deberías ver solo tu hoja asignada
-5. Clic en "Ejecutar"
-6. Marca facturas como entregadas
-7. Registra cobros:
-   - Factura 001: Cobrada RD$ 5,000
-   - Factura 002: Cobrada USD 100
-8. Registra gastos:
-   - Combustible: RD$ 800 (con foto)
-   - Peaje: RD$ 200
-9. Ve el balance en tiempo real actualizarse
+4. Haz clic en "Crear Nueva Hoja"
+5. Verifica que puedes:
+   - ✅ Seleccionar empleado de ruta (dropdown)
+   - ✅ Seleccionar ruta
+   - ✅ Agregar facturas con montos
+   - ✅ Asignar monto inicial en RD$
+   - ✅ Guardar la hoja
 
-**Paso 5: Cerrar hoja de ruta**
-1. Cierra sesión
-2. Inicia sesión como Usuario_Completo (maria@test.com)
+#### C. Probar como Empleado de Ruta
+
+1. Crea un usuario con rol "Empleado_Ruta" desde Super Admin
+2. **IMPORTANTE**: El nombre del perfil debe coincidir con un empleado en el catálogo
+3. Cierra sesión y entra con ese usuario
+4. Ve a "Hojas de Ruta"
+5. Verifica que:
+   - ✅ Solo ves las hojas asignadas a ti
+   - ✅ Puedes hacer clic en "Ejecutar"
+   - ✅ Puedes marcar facturas como entregadas
+   - ✅ Puedes registrar cobros (monto y moneda)
+   - ✅ Puedes registrar gastos con foto
+   - ✅ Ves el balance actualizado en tiempo real
+
+#### D. Probar como Usuario_Completo
+
+1. Crea un usuario con rol "Usuario_Completo" desde Super Admin
+2. Cierra sesión y entra con ese usuario
 3. Ve a "Hojas de Ruta"
-4. Selecciona la hoja ejecutada
-5. Clic en "Cerrar"
-6. Revisa balance calculado:
-   - RD$: 2,000 + 5,000 - 1,000 = 6,000
-   - USD: 0 + 100 - 0 = 100
-7. Ingresa monto físico contado
-8. Confirma cierre
-9. Verifica que se creó registro en folder diario
+4. Selecciona una hoja en estado "abierta"
+5. Haz clic en "Cerrar"
+6. Verifica que:
+   - ✅ Ves el balance calculado (RD$ y USD)
+   - ✅ Puedes ingresar monto físico contado
+   - ✅ Ves las diferencias si las hay
+   - ✅ Al confirmar, se crea registro en folder diario
 
 ---
 
-## Funcionalidades Implementadas
+## 📱 Funcionalidades Móviles
 
-### ✅ Multi-Tenant
-- Aislamiento completo de datos por empresa
-- RLS en todas las tablas
-- Storage con prefijos por empresa_id
-- Super_Admin con acceso cross-tenant
+### PWA (Progressive Web App)
+- ✅ Instalable en móvil como app nativa
+- ✅ Funciona offline
+- ✅ Sincronización automática al recuperar conexión
+- ✅ Cámara para fotos de gastos
 
-### ✅ Roles y Permisos
-- Super_Admin: Gestión global de empresas
-- Dueño: Dashboard y supervisión
-- Usuario_Completo: Acceso completo a su empresa
-- Usuario_Ingresos: Solo ingresos
-- Usuario_Egresos: Solo egresos
-- Encargado_Almacén: Crear hojas de ruta
-- Secretaria: Crear hojas de ruta
-- Empleado_Ruta: Ejecutar sus hojas asignadas
-
-### ✅ Hojas de Ruta Digitales
-- Creación con asignación de empleado
-- Gestión de facturas multi-moneda (RD$ y USD)
-- Registro de entregas y cobros
-- Registro de gastos con evidencias
-- Balance en tiempo real
-- Cierre con validación de diferencias
-- Integración automática con folder diario
-
-### ✅ Interfaz Adaptativa
-- Menú de hojas de ruta solo visible en nivel "completa"
-- Indicador visual del nivel de automatización
-- Actualización automática al cambiar nivel
-
-### ✅ Seguridad
-- Validación de empresa_id en todas las operaciones
-- Auditoría completa en audit_logs
-- Detección de violaciones de seguridad
-- Prevención de acceso cross-tenant no autorizado
-
-### ✅ Offline (PWA)
-- Sincronización automática
-- IndexedDB con índices por empresa_id
-- Detección de conflictos cross-tenant
+### Responsive Design
+- ✅ Interfaz adaptada a pantallas pequeñas
+- ✅ Botones táctiles optimizados
+- ✅ Navegación móvil intuitiva
 
 ---
 
-## Documentación Disponible
+## 🔍 Flujo Completo de Hojas de Ruta
 
-1. **GUIA_SUPER_ADMIN.md** - Guía completa para Super Admin
-2. **GUIA_AUTOMATIZACION_COMPLETA.md** - Guía de hojas de ruta digitales
-3. **GUIA_ROLES_HOJAS_RUTA.md** - Roles y permisos para hojas de ruta
-4. **RESUMEN_IMPLEMENTACION_MULTI_TENANT.md** - Resumen técnico de implementación
-
----
-
-## Comandos Git
-
-```bash
-# Ver estado
-git status
-
-# Agregar todos los cambios
-git add .
-
-# Hacer commit
-git commit -m "feat: implementación completa multi-tenant con hojas de ruta digitales
-
-- Corregidos errores de TypeScript
-- Super Admin configurado
-- Hojas de ruta digitales implementadas
-- Roles y permisos completos
-- Interfaz adaptativa por nivel
-- Documentación completa"
-
-# Subir a GitHub
-git push origin main
+```
+1. CREACIÓN (Encargado Almacén)
+   ↓
+   - Selecciona empleado de ruta del dropdown
+   - Selecciona ruta (ej: Bani, Capital, Santo Domingo)
+   - Agrega facturas con montos y monedas
+   - Asigna monto inicial en RD$ para gastos
+   - Guarda la hoja
+   
+2. EJECUCIÓN (Empleado de Ruta)
+   ↓
+   - Ve solo sus hojas asignadas
+   - Hace clic en "Ejecutar"
+   - Durante la ruta:
+     * Marca facturas como entregadas (checkbox)
+     * Registra cobros con monto y moneda
+     * Registra gastos (combustible, peajes) con foto
+     * Ve balance en tiempo real
+   
+3. CIERRE (Usuario_Completo)
+   ↓
+   - Selecciona hoja abierta
+   - Hace clic en "Cerrar"
+   - Revisa balance calculado
+   - Ingresa monto físico contado
+   - Valida diferencias
+   - Confirma cierre
+   → Registro automático en folder diario
 ```
 
 ---
 
-## Verificación Pre-Deploy
+## ⚠️ Requisitos Previos
 
-Antes de hacer push, verifica:
+### Para usar Hojas de Ruta:
 
-- ✅ Todos los archivos TypeScript sin errores
-- ✅ Super Admin creado en base de datos
-- ✅ Migración multi-tenant ejecutada
-- ✅ Tablas de hojas de ruta creadas
-- ✅ Políticas RLS activas
-- ✅ Variables de entorno configuradas en Vercel
+1. **Nivel de Automatización**: La empresa debe tener `nivel_automatizacion = 'completa'`
+   - Se cambia desde Dashboard Super Admin
+   - Solo Super_Admin puede cambiar el nivel
+
+2. **Catálogos Configurados**:
+   - ✅ Empleados creados en el catálogo
+   - ✅ Rutas creadas en el catálogo
+
+3. **Usuarios Configurados**:
+   - ✅ Empleados de ruta deben tener perfiles con rol 'Empleado_Ruta'
+   - ✅ El nombre del perfil debe coincidir con el nombre del empleado
+
+### Cambiar Nivel de Automatización:
+
+```sql
+-- Si necesitas cambiar el nivel manualmente:
+UPDATE empresas 
+SET nivel_automatizacion = 'completa' 
+WHERE id = 1;
+```
+
+O desde la UI:
+1. Entra como Super Admin
+2. Ve a "Super Admin"
+3. Haz clic en "Nivel" en la empresa
+4. Selecciona "Completa"
+5. Confirma
 
 ---
 
-## Troubleshooting
+## 📊 Verificaciones de Seguridad
 
-### Si el deploy falla:
-1. Revisa los logs en Vercel
-2. Verifica que todas las variables de entorno estén configuradas
-3. Asegúrate de que el build local funciona: `npm run build`
+### Multi-Tenant Isolation
+- ✅ Cada empresa solo ve sus datos
+- ✅ RLS policies activas en todas las tablas
+- ✅ Storage aislado por empresa_id
 
-### Si no aparece el menú de hojas de ruta:
-1. Verifica que la empresa tenga nivel_automatizacion = 'completa'
-2. Verifica que el usuario tenga permisos para acceder
-3. Revisa la consola del navegador por errores
+### Permisos por Rol
+- ✅ Empleado_Ruta solo ve sus hojas asignadas
+- ✅ Encargado_Almacén puede crear pero no cerrar
+- ✅ Usuario_Completo tiene acceso completo
+- ✅ Dueño puede ver y cerrar, pero no crear
 
-### Si el Empleado de Ruta no ve sus hojas:
-1. Verifica que el nombre del perfil coincida exactamente con el nombre del empleado en el catálogo
-2. Verifica que la hoja de ruta esté asignada a ese empleado
-3. Revisa las políticas RLS en la tabla hojas_ruta
+### Auditoría
+- ✅ Todas las acciones se registran en audit_logs
+- ✅ Trazabilidad completa del proceso
+- ✅ Detección de violaciones de seguridad
 
 ---
 
-## Contacto y Soporte
+## 🐛 Solución de Problemas
 
-Si encuentras algún problema durante las pruebas, revisa:
-1. Logs de Supabase (SQL Editor → Logs)
-2. Consola del navegador (F12)
-3. Audit logs en el Dashboard de Super Admin
+### No veo el menú "Hojas de Ruta"
+- Verifica que la empresa tenga `nivel_automatizacion = 'completa'`
+- Verifica que tu rol tenga permisos (no Usuario_Egresos)
 
-¡Listo para probar! 🚀
+### No veo mis hojas como Empleado de Ruta
+- Verifica que tu nombre de perfil coincida con un empleado en el catálogo
+- Verifica que haya hojas asignadas a ese empleado
+
+### No puedo subir fotos de gastos
+- Verifica permisos de cámara en el navegador
+- Verifica que el archivo sea imagen (JPEG, PNG, HEIC, WebP)
+- Verifica que el tamaño no exceda 10MB
+
+### El balance no se actualiza
+- Refresca la página
+- Verifica que los montos estén correctamente ingresados
+- Verifica que las monedas estén seleccionadas
+
+---
+
+## 📚 Documentación Relacionada
+
+- `GUIA_ROLES_HOJAS_RUTA.md` - Guía completa de roles y permisos
+- `GUIA_AUTOMATIZACION_COMPLETA.md` - Flujo completo de hojas de ruta
+- `GUIA_SUPER_ADMIN.md` - Gestión de empresas y usuarios
+- `RESUMEN_IMPLEMENTACION_MULTI_TENANT.md` - Detalles técnicos
+
+---
+
+## ✅ Checklist de Pruebas
+
+### Super Admin
+- [ ] Ver lista de empresas
+- [ ] Crear usuario
+- [ ] Asignar rol
+- [ ] Cambiar nivel de automatización
+- [ ] Ver monitoreo de storage
+
+### Encargado de Almacén
+- [ ] Crear hoja de ruta
+- [ ] Seleccionar empleado de ruta
+- [ ] Agregar facturas
+- [ ] Asignar monto inicial
+- [ ] Ver todas las hojas
+
+### Empleado de Ruta
+- [ ] Ver solo mis hojas asignadas
+- [ ] Ejecutar hoja
+- [ ] Marcar entregas
+- [ ] Registrar cobros
+- [ ] Registrar gastos con foto
+- [ ] Ver balance en tiempo real
+
+### Usuario_Completo
+- [ ] Crear hojas de ruta
+- [ ] Ejecutar hojas
+- [ ] Cerrar hojas
+- [ ] Ver diferencias calculado vs físico
+- [ ] Verificar registro en folder diario
+
+---
+
+## 🎉 ¡Todo Listo!
+
+El sistema está completamente funcional y listo para pruebas en producción desde dispositivos móviles. La funcionalidad de hojas de ruta digitales está implementada con:
+
+✅ Selección de empleado de ruta por Encargado de Almacén
+✅ Panel dedicado para Empleado de Ruta
+✅ Registro de entregas y cobros en tiempo real
+✅ Balance automático multi-moneda
+✅ Evidencias fotográficas de gastos
+✅ Integración con folder diario
+
+**Siguiente paso**: Ejecutar `git push` y probar desde tu móvil.
