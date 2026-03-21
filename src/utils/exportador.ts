@@ -1,6 +1,5 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
 import XLSXStyle from 'xlsx-js-style';
 import type { SemanaLaboral, FolderDiario, Registro } from '../types';
 
@@ -55,34 +54,6 @@ export function exportarPDF(datos: DatosExportacion, rol: string, descargar: boo
 
     let yPos = 35;
 
-    // Resumen semanal
-    doc.setFontSize(14);
-    doc.text('Resumen Semanal', 14, yPos);
-    yPos += 10;
-
-    const resumenData = [
-      ['Total Ingresos', `$${datos.semana.total_ingresos?.toFixed(2) || '0.00'}`],
-      ['Total Egresos', `$${datos.semana.total_egresos?.toFixed(2) || '0.00'}`],
-      ['Balance Neto', `$${datos.semana.balance_neto?.toFixed(2) || '0.00'}`],
-    ];
-
-    if (rol === 'Dueño') {
-      resumenData.push(
-        ['Total Depositado', `$${datos.semana.total_depositos?.toFixed(2) || '0.00'}`],
-        ['Saldo Disponible', `$${datos.semana.saldo_disponible?.toFixed(2) || '0.00'}`]
-      );
-    }
-
-    autoTable(doc, {
-      startY: yPos,
-      head: [['Concepto', 'Monto']],
-      body: resumenData,
-      theme: 'grid',
-      headStyles: { fillColor: [79, 70, 229] },
-    });
-
-    yPos = (doc as any).lastAutoTable.finalY + 15;
-
     // Consolidar todos los registros en orden cronológico
     const registrosConsolidados: Array<{
       fecha: string;
@@ -136,7 +107,9 @@ export function exportarPDF(datos: DatosExportacion, rol: string, descargar: boo
     const tiposFilas: Array<'ingreso' | 'egreso'> = registrosConsolidados.map(r => r.tipo);
     const tablaData = registrosConsolidados.map(r => [
       fechaCorta(r.fecha),
-      [r.concepto, r.empleado, r.ruta].filter(Boolean).join(' - '),
+      r.tipo === 'ingreso'
+        ? [r.empleado, r.ruta].filter(Boolean).join(' - ')
+        : r.concepto || '',
       r.tipo === 'ingreso' ? r.monto.toFixed(2) : '',
       r.tipo === 'egreso' ? r.monto.toFixed(2) : '',
       r.saldoAcumulado.toFixed(2),
@@ -271,7 +244,9 @@ export function exportarXLSX(datos: DatosExportacion, rol: string, descargar: bo
         consolidados.push({
           fecha: folder.fecha_laboral,
           tipo: r.tipo,
-          descripcion: [r.concepto, r.empleado, r.ruta].filter(Boolean).join(' - '),
+          descripcion: r.tipo === 'ingreso'
+            ? [r.empleado, r.ruta].filter(Boolean).join(' - ')
+            : r.concepto || '',
           monto: r.monto,
           created_at: r.created_at,
           saldo: 0,
@@ -376,32 +351,13 @@ export function exportarXLSX(datos: DatosExportacion, rol: string, descargar: bo
 
     XLSXStyle.utils.book_append_sheet(workbook, wsReg, 'Registros');
 
-    // ── Hoja Resumen ──────────────────────────────────────────────────────
-    const resumenData: any[][] = [
-      [nombreEmpresa],
-      [subtituloXLSX],
-      [],
-      ['Concepto', 'Monto'],
-      ['Total Ingresos', datos.semana.total_ingresos?.toFixed(2) || '0.00'],
-      ['Total Egresos',  datos.semana.total_egresos?.toFixed(2)  || '0.00'],
-      ['Balance Neto',   datos.semana.balance_neto?.toFixed(2)   || '0.00'],
-    ];
-    if (rol === 'Dueño') {
-      resumenData.push(
-        ['Total Depositado', datos.semana.total_depositos?.toFixed(2) || '0.00'],
-        ['Saldo Disponible', datos.semana.saldo_disponible?.toFixed(2) || '0.00']
-      );
-    }
-    const wsResumen = XLSX.utils.aoa_to_sheet(resumenData);
-    XLSXStyle.utils.book_append_sheet(workbook, wsResumen, 'Resumen');
-
     // ── Hoja Depósitos (solo Dueño) ───────────────────────────────────────
     if (rol === 'Dueño' && datos.depositos && datos.depositos.length > 0) {
       const depositosData: any[][] = [['Fecha', 'Banco', 'Nota', 'Monto']];
       for (const d of datos.depositos) {
         depositosData.push([d.fecha_deposito, d.banco || 'N/A', d.nota || '', d.monto.toFixed(2)]);
       }
-      const wsDepositos = XLSX.utils.aoa_to_sheet(depositosData);
+      const wsDepositos = XLSXStyle.utils.aoa_to_sheet(depositosData);
       XLSXStyle.utils.book_append_sheet(workbook, wsDepositos, 'Depósitos');
     }
 
