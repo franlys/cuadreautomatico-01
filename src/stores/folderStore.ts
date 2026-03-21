@@ -1,7 +1,13 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { useAuthStore } from './authStore';
 import type { FolderDiario, SemanaLaboral } from '../types';
 import { obtenerFechaLaboral, obtenerRangoSemanaLaboral } from '../utils/fechaLaboral';
+
+/** Obtiene empresa_id del perfil activo en el store de auth */
+function getEmpresaId(): string | undefined {
+  return useAuthStore.getState().perfil?.empresa_id ?? undefined;
+}
 
 interface FolderState {
   folderActual: FolderDiario | null;
@@ -32,30 +38,33 @@ export const useFolderStore = create<FolderState>((set, get) => ({
       const hoy = new Date();
       const { inicio, fin } = obtenerRangoSemanaLaboral(hoy);
       
+      const empresaId = getEmpresaId();
+
       // Buscar semana laboral existente
-      const { data: semanaExistente, error: buscarError } = await supabase
+      let queryBuscar = supabase
         .from('semanas_laborales')
         .select('*')
         .eq('fecha_inicio', inicio)
-        .eq('fecha_fin', fin)
-        .single();
-      
+        .eq('fecha_fin', fin);
+      if (empresaId) queryBuscar = queryBuscar.eq('empresa_id', empresaId);
+      const { data: semanaExistente, error: buscarError } = await queryBuscar.single();
+
       if (buscarError && buscarError.code !== 'PGRST116') {
         throw buscarError;
       }
-      
+
       if (semanaExistente) {
         set({ semanaActual: semanaExistente, loading: false });
         return semanaExistente;
       }
-      
+
       // Crear nueva semana laboral
+      const insertSemana: any = { fecha_inicio: inicio, fecha_fin: fin };
+      if (empresaId) insertSemana.empresa_id = empresaId;
+
       const { data: nuevaSemana, error: crearError } = await supabase
         .from('semanas_laborales')
-        .insert([{
-          fecha_inicio: inicio,
-          fecha_fin: fin,
-        }])
+        .insert([insertSemana])
         .select()
         .single();
       
@@ -83,31 +92,37 @@ export const useFolderStore = create<FolderState>((set, get) => ({
       const hoy = new Date();
       const fechaLaboral = obtenerFechaLaboral(hoy);
       
+      const empresaId = getEmpresaId();
+
       // Buscar folder existente para esta fecha laboral
-      const { data: folderExistente, error: buscarError } = await supabase
+      let queryFolder = supabase
         .from('folders_diarios')
         .select('*')
         .eq('semana_laboral_id', semana.id)
-        .eq('fecha_laboral', fechaLaboral)
-        .single();
-      
+        .eq('fecha_laboral', fechaLaboral);
+      if (empresaId) queryFolder = queryFolder.eq('empresa_id', empresaId);
+      const { data: folderExistente, error: buscarError } = await queryFolder.single();
+
       if (buscarError && buscarError.code !== 'PGRST116') {
         throw buscarError;
       }
-      
+
       if (folderExistente) {
         set({ folderActual: folderExistente, loading: false });
         return folderExistente;
       }
-      
+
       // Crear nuevo folder diario
+      const insertFolder: any = {
+        semana_laboral_id: semana.id,
+        fecha_laboral: fechaLaboral,
+        cerrado: false,
+      };
+      if (empresaId) insertFolder.empresa_id = empresaId;
+
       const { data: nuevoFolder, error: crearError } = await supabase
         .from('folders_diarios')
-        .insert([{
-          semana_laboral_id: semana.id,
-          fecha_laboral: fechaLaboral,
-          cerrado: false,
-        }])
+        .insert([insertFolder])
         .select()
         .single();
       
@@ -146,11 +161,14 @@ export const useFolderStore = create<FolderState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      const { data: folders, error: cargarError } = await supabase
+      const empresaId = getEmpresaId();
+      let queryCarga = supabase
         .from('folders_diarios')
         .select('*')
         .eq('semana_laboral_id', semanaId)
         .order('fecha_laboral', { ascending: true });
+      if (empresaId) queryCarga = queryCarga.eq('empresa_id', empresaId);
+      const { data: folders, error: cargarError } = await queryCarga;
       
       if (cargarError) throw cargarError;
       
