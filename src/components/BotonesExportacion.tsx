@@ -2,40 +2,53 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { exportarPDF, exportarXLSX } from '../utils/exportador';
-import type { SemanaLaboral, Registro } from '../types';
+import type { SemanaLaboral, FolderDiario, Registro } from '../types';
 
 interface BotonesExportacionProps {
   semana: SemanaLaboral;
+  /** Folders ya cargados en el store — evita re-query y garantiza mismos datos que la UI */
+  folders?: FolderDiario[];
 }
 
-export function BotonesExportacion({ semana }: BotonesExportacionProps) {
+export function BotonesExportacion({ semana, folders: foldersProps }: BotonesExportacionProps) {
   const { perfil } = useAuth();
   const [exportando, setExportando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const cargarDatosCompletos = async () => {
     try {
-      // Cargar folders
-      const { data: folders, error: foldersError } = await supabase
-        .from('folders_diarios')
-        .select('*')
-        .eq('semana_laboral_id', semana.id)
-        .order('fecha_laboral', { ascending: true });
+      // Usar folders del store si están disponibles; si no, consultarlos
+      let carpetas: FolderDiario[] = foldersProps && foldersProps.length > 0
+        ? foldersProps
+        : [];
 
-      if (foldersError) throw foldersError;
+      if (carpetas.length === 0) {
+        const { data: foldersDB, error: foldersError } = await supabase
+          .from('folders_diarios')
+          .select('*')
+          .eq('semana_laboral_id', semana.id)
+          .order('fecha_laboral', { ascending: true });
+        if (foldersError) throw foldersError;
+        carpetas = foldersDB || [];
+      }
 
-      // Cargar registros de cada folder
+      // Cargar TODOS los registros de la semana en una sola query (igual que ResumenSemanal)
       const registrosPorFolder: Record<string, Registro[]> = {};
-      
-      for (const folder of folders || []) {
-        const { data: registros, error: registrosError } = await supabase
+      if (carpetas.length > 0) {
+        const folderIds = carpetas.map(f => f.id);
+        const { data: registrosData, error: registrosError } = await supabase
           .from('registros')
           .select('*')
-          .eq('folder_diario_id', folder.id)
+          .in('folder_diario_id', folderIds)
           .order('created_at', { ascending: true });
-
         if (registrosError) throw registrosError;
-        registrosPorFolder[folder.id] = registros || [];
+        // Agrupar por folder_diario_id
+        for (const r of (registrosData || [])) {
+          if (!registrosPorFolder[r.folder_diario_id]) {
+            registrosPorFolder[r.folder_diario_id] = [];
+          }
+          registrosPorFolder[r.folder_diario_id].push(r);
+        }
       }
 
       // Cargar depósitos (solo para Dueño)
@@ -64,7 +77,7 @@ export function BotonesExportacion({ semana }: BotonesExportacionProps) {
 
       return {
         semana,
-        folders: folders || [],
+        folders: carpetas,
         registrosPorFolder,
         depositos,
         nombreEmpresa,

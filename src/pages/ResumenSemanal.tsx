@@ -59,7 +59,7 @@ export function ResumenSemanal() {
           {/* Botones de exportación */}
           {semanaActual && (
             <div className="w-80">
-              <BotonesExportacion semana={semanaActual} />
+              <BotonesExportacion semana={semanaActual} folders={folders} />
             </div>
           )}
         </div>
