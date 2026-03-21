@@ -136,13 +136,16 @@ export class TenantService {
     const storageUsadoMb = storageUsadoBytes / (1024 * 1024);
 
     // Obtener última actividad
-    const { data: ultimaActividad } = await supabase
+    const { data: ultimaActividadArray } = await supabase
       .from('registros')
       .select('created_at')
       .eq('empresa_id', id)
       .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+      .limit(1);
+
+    const ultimaActividad = ultimaActividadArray && ultimaActividadArray.length > 0 
+      ? ultimaActividadArray[0] 
+      : null;
 
     return {
       total_usuarios: totalUsuarios || 0,
