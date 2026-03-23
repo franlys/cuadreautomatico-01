@@ -25,8 +25,11 @@ export function obtenerFechaLaboral(fecha: Date): string {
     fechaLaboral = fecha;
   }
   
-  // Retornar en formato YYYY-MM-DD
-  return fechaLaboral.toISOString().split('T')[0];
+  // Retornar en formato YYYY-MM-DD usando fecha LOCAL (no UTC)
+  const y = fechaLaboral.getFullYear();
+  const m = String(fechaLaboral.getMonth() + 1).padStart(2, '0');
+  const d = String(fechaLaboral.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 /**
@@ -54,9 +57,11 @@ export function obtenerRangoSemanaLaboral(fecha: Date): { inicio: string; fin: s
   const sabado = new Date(lunes);
   sabado.setDate(lunes.getDate() + 5);
   
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const fmtLocal = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
   return {
-    inicio: lunes.toISOString().split('T')[0],
-    fin: sabado.toISOString().split('T')[0],
+    inicio: fmtLocal(lunes),
+    fin: fmtLocal(sabado),
   };
 }
 

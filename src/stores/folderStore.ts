@@ -18,7 +18,7 @@ interface FolderState {
   
   // Acciones
   obtenerOCrearFolderActual: () => Promise<FolderDiario | null>;
-  obtenerOCrearSemanaActual: () => Promise<SemanaLaboral | null>;
+  obtenerOCrearSemanaActual: (fecha?: Date) => Promise<SemanaLaboral | null>;
   cerrarFolder: (folderId: string) => Promise<void>;
   cargarFoldersSemana: (semanaId: string) => Promise<void>;
   refrescarFolderActual: () => Promise<void>;
@@ -31,11 +31,11 @@ export const useFolderStore = create<FolderState>((set, get) => ({
   loading: false,
   error: null,
 
-  obtenerOCrearSemanaActual: async () => {
+  obtenerOCrearSemanaActual: async (fecha?: Date) => {
     try {
       set({ loading: true, error: null });
-      
-      const hoy = new Date();
+
+      const hoy = fecha ?? new Date();
       const { inicio, fin } = obtenerRangoSemanaLaboral(hoy);
       
       const empresaId = getEmpresaId();
@@ -82,39 +82,40 @@ export const useFolderStore = create<FolderState>((set, get) => ({
   obtenerOCrearFolderActual: async () => {
     try {
       set({ loading: true, error: null });
-      
-      // Primero obtener o crear la semana actual
-      const semana = await get().obtenerOCrearSemanaActual();
-      if (!semana) {
-        throw new Error('No se pudo obtener la semana laboral');
-      }
-      
+
       const hoy = new Date();
       const fechaLaboral = obtenerFechaLaboral(hoy);
-      
+
       const empresaId = getEmpresaId();
 
-      // Buscar folder existente para esta fecha laboral
+      // Buscar folder por fecha_laboral + empresa_id (sin filtrar por semana
+      // para evitar conflicto cuando el lunes busca el sábado de la semana anterior)
       let queryFolder = supabase
         .from('folders_diarios')
         .select('*')
-        .eq('semana_laboral_id', semana.id)
         .eq('fecha_laboral', fechaLaboral);
       if (empresaId) queryFolder = queryFolder.eq('empresa_id', empresaId);
-      const { data: folderExistente, error: buscarError } = await queryFolder.single();
+      const { data: folderExistente, error: buscarError } = await queryFolder
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (buscarError && buscarError.code !== 'PGRST116') {
-        throw buscarError;
-      }
+      if (buscarError) throw buscarError;
 
       if (folderExistente) {
         set({ folderActual: folderExistente, loading: false });
         return folderExistente;
       }
 
+      // Calcular la semana que corresponde a fechaLaboral (no a "hoy")
+      // Importante: el lunes usa la semana del sábado anterior
+      const fechaLaboralDate = new Date(fechaLaboral + 'T12:00:00');
+      const semanaCorrecta = await get().obtenerOCrearSemanaActual(fechaLaboralDate);
+      if (!semanaCorrecta) throw new Error('No se pudo obtener la semana laboral');
+
       // Crear nuevo folder diario
       const insertFolder: any = {
-        semana_laboral_id: semana.id,
+        semana_laboral_id: semanaCorrecta.id,
         fecha_laboral: fechaLaboral,
         cerrado: false,
       };
@@ -125,9 +126,24 @@ export const useFolderStore = create<FolderState>((set, get) => ({
         .insert([insertFolder])
         .select()
         .single();
-      
-      if (crearError) throw crearError;
-      
+
+      // Si hay duplicate key, alguien más lo creó en paralelo — obtener el existente
+      if (crearError) {
+        if (crearError.code === '23505') {
+          let qRetry = supabase
+            .from('folders_diarios')
+            .select('*')
+            .eq('fecha_laboral', fechaLaboral);
+          if (empresaId) qRetry = qRetry.eq('empresa_id', empresaId);
+          const { data: existente } = await qRetry.limit(1).maybeSingle();
+          if (existente) {
+            set({ folderActual: existente, loading: false });
+            return existente;
+          }
+        }
+        throw crearError;
+      }
+
       set({ folderActual: nuevoFolder, loading: false });
       return nuevoFolder;
       
