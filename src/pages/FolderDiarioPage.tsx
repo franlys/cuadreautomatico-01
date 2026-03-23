@@ -271,13 +271,19 @@ interface HistorialProps {
 }
 
 function HistorialFolders({ folders, folderActual, fechaLaboralHoy, onSeleccionar }: HistorialProps) {
-  if (folders.length === 0) return null;
+  // Excluir domingos (artefactos del código anterior)
+  const foldersFiltrados = folders.filter(f => {
+    const dia = new Date(f.fecha_laboral + 'T12:00:00').getDay();
+    return dia !== 0;
+  });
+
+  if (foldersFiltrados.length === 0) return null;
 
   return (
     <div className="bg-white rounded-lg shadow p-5">
       <h3 className="text-base font-semibold text-gray-900 mb-4">Historial de Días</h3>
       <div className="space-y-2">
-        {folders.map(folder => {
+        {foldersFiltrados.map(folder => {
           const esActivo = folderActual?.id === folder.id;
           const esHoy = folder.fecha_laboral === fechaLaboralHoy;
           return (

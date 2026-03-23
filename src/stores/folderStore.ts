@@ -207,10 +207,24 @@ export const useFolderStore = create<FolderState>((set, get) => ({
         .select('*')
         .order('fecha_laboral', { ascending: false })
         .limit(30);
-      if (empresaId) q = q.eq('empresa_id', empresaId);
+      // Incluir también folders con empresa_id NULL (datos migrados antes del fix)
+      if (empresaId) {
+        q = q.or(`empresa_id.eq.${empresaId},empresa_id.is.null`);
+      }
       const { data, error } = await q;
       if (error) throw error;
-      set({ foldersRecientes: data || [] });
+      // Filtrar duplicados: si hay folder con empresa_id y otro sin él para la misma fecha,
+      // preferir el que tiene empresa_id
+      const porFecha = new Map<string, typeof data[0]>();
+      for (const f of data || []) {
+        const existing = porFecha.get(f.fecha_laboral);
+        if (!existing || (f.empresa_id && !existing.empresa_id)) {
+          porFecha.set(f.fecha_laboral, f);
+        }
+      }
+      set({ foldersRecientes: Array.from(porFecha.values()).sort(
+        (a, b) => b.fecha_laboral.localeCompare(a.fecha_laboral)
+      )});
     } catch (error: any) {
       console.error('Error al cargar folders recientes:', error);
     }
