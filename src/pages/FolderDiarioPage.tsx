@@ -101,7 +101,6 @@ export function FolderDiarioPage() {
   }
 
   const folderDeHoy = foldersRecientes.find(f => f.fecha_laboral === fechaLaboralHoy);
-  const folderSeleccionadoEsDeHoy = folderActual?.fecha_laboral === fechaLaboralHoy;
 
   return (
     <Layout>
