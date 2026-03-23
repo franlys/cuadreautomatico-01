@@ -1,61 +1,93 @@
--- BACKFILL: Asignar empresa_id a folders y registros que tienen NULL
+-- BACKFILL v2: Manejar duplicados en semanas_laborales antes del backfill
 -- Ejecutar en Supabase SQL Editor
--- Esto soluciona los datos ingresados antes del fix de empresa_id
 
 DO $$
 DECLARE
   v_empresa_id UUID;
-  v_folders_actualizados INT;
-  v_registros_actualizados INT;
+  rec RECORD;
 BEGIN
-  -- Obtener el empresa_id de la única empresa activa
+  -- Obtener empresa_id activa
   SELECT id INTO v_empresa_id FROM empresas LIMIT 1;
-
   IF v_empresa_id IS NULL THEN
-    RAISE EXCEPTION 'No se encontró ninguna empresa en la tabla empresas';
+    RAISE EXCEPTION 'No se encontró ninguna empresa';
   END IF;
+  RAISE NOTICE 'empresa_id: %', v_empresa_id;
 
-  RAISE NOTICE 'Usando empresa_id: %', v_empresa_id;
+  -- ── PASO 1: Semanas laborales ──────────────────────────────────────────
+  -- Para cada semana con empresa_id NULL, verificar si ya existe una con empresa_id
+  FOR rec IN
+    SELECT s_null.id AS id_null, s_ok.id AS id_ok
+    FROM semanas_laborales s_null
+    JOIN semanas_laborales s_ok
+      ON s_ok.empresa_id = v_empresa_id
+      AND s_ok.fecha_inicio = s_null.fecha_inicio
+      AND s_ok.fecha_fin    = s_null.fecha_fin
+    WHERE s_null.empresa_id IS NULL
+  LOOP
+    -- Redirigir los folders que apuntan a la semana NULL hacia la semana correcta
+    UPDATE folders_diarios
+    SET semana_laboral_id = rec.id_ok
+    WHERE semana_laboral_id = rec.id_null;
 
-  -- Actualizar semanas_laborales sin empresa_id
-  UPDATE semanas_laborales
-  SET empresa_id = v_empresa_id
-  WHERE empresa_id IS NULL;
-  RAISE NOTICE 'Semanas actualizadas: %', ROW_COUNT;
+    -- Eliminar la semana duplicada con NULL
+    DELETE FROM semanas_laborales WHERE id = rec.id_null;
 
-  -- Actualizar folders_diarios sin empresa_id
-  UPDATE folders_diarios
-  SET empresa_id = v_empresa_id
-  WHERE empresa_id IS NULL;
-  GET DIAGNOSTICS v_folders_actualizados = ROW_COUNT;
-  RAISE NOTICE 'Folders actualizados: %', v_folders_actualizados;
+    RAISE NOTICE 'Semana % reemplazada por %', rec.id_null, rec.id_ok;
+  END LOOP;
 
-  -- Actualizar registros sin empresa_id
-  UPDATE registros
-  SET empresa_id = v_empresa_id
-  WHERE empresa_id IS NULL;
-  GET DIAGNOSTICS v_registros_actualizados = ROW_COUNT;
-  RAISE NOTICE 'Registros actualizados: %', v_registros_actualizados;
+  -- Actualizar semanas que quedaron sin empresa_id y no tienen conflicto
+  UPDATE semanas_laborales SET empresa_id = v_empresa_id WHERE empresa_id IS NULL;
+  RAISE NOTICE 'Semanas restantes actualizadas';
 
-  -- Actualizar depositos sin empresa_id
-  UPDATE depositos
-  SET empresa_id = v_empresa_id
-  WHERE empresa_id IS NULL;
-  RAISE NOTICE 'Depositos actualizados: %', ROW_COUNT;
+  -- ── PASO 2: Folders diarios ────────────────────────────────────────────
+  -- Para cada folder con empresa_id NULL, verificar si ya existe uno con empresa_id para esa fecha
+  FOR rec IN
+    SELECT f_null.id AS id_null, f_ok.id AS id_ok
+    FROM folders_diarios f_null
+    JOIN folders_diarios f_ok
+      ON f_ok.empresa_id = v_empresa_id
+      AND f_ok.fecha_laboral = f_null.fecha_laboral
+    WHERE f_null.empresa_id IS NULL
+  LOOP
+    -- Mover los registros del folder NULL al folder correcto
+    UPDATE registros
+    SET folder_diario_id = rec.id_ok
+    WHERE folder_diario_id = rec.id_null;
 
-  RAISE NOTICE '✅ Backfill completado. Folders: %, Registros: %',
-    v_folders_actualizados, v_registros_actualizados;
+    -- Eliminar el folder duplicado con NULL
+    DELETE FROM folders_diarios WHERE id = rec.id_null;
+
+    RAISE NOTICE 'Folder % reemplazado por %', rec.id_null, rec.id_ok;
+  END LOOP;
+
+  -- Actualizar folders que quedaron sin empresa_id y no tienen conflicto
+  UPDATE folders_diarios SET empresa_id = v_empresa_id WHERE empresa_id IS NULL;
+  RAISE NOTICE 'Folders restantes actualizados';
+
+  -- ── PASO 3: Registros ──────────────────────────────────────────────────
+  UPDATE registros SET empresa_id = v_empresa_id WHERE empresa_id IS NULL;
+  RAISE NOTICE 'Registros actualizados';
+
+  -- ── PASO 4: Depositos ──────────────────────────────────────────────────
+  UPDATE depositos SET empresa_id = v_empresa_id WHERE empresa_id IS NULL;
+  RAISE NOTICE 'Depositos actualizados';
+
+  RAISE NOTICE '✅ Backfill completado';
 END $$;
 
--- Verificar resultado
+-- Verificar resultado final
 SELECT
-  'folders_diarios' as tabla,
+  'semanas_laborales' as tabla,
   COUNT(*) FILTER (WHERE empresa_id IS NULL) as sin_empresa_id,
   COUNT(*) FILTER (WHERE empresa_id IS NOT NULL) as con_empresa_id
+FROM semanas_laborales
+UNION ALL
+SELECT 'folders_diarios',
+  COUNT(*) FILTER (WHERE empresa_id IS NULL),
+  COUNT(*) FILTER (WHERE empresa_id IS NOT NULL)
 FROM folders_diarios
 UNION ALL
-SELECT
-  'registros',
+SELECT 'registros',
   COUNT(*) FILTER (WHERE empresa_id IS NULL),
   COUNT(*) FILTER (WHERE empresa_id IS NOT NULL)
 FROM registros;
