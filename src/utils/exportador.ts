@@ -70,6 +70,7 @@ export function exportarPDF(datos: DatosExportacion, rol: string, descargar: boo
       const registros = datos.registrosPorFolder[folder.id] || [];
       const registrosFiltrados = registros.filter(r => {
         if (rol === 'Dueño') return true;
+        if (rol === 'Usuario_Completo') return true;
         if (rol === 'Usuario_Ingresos') return r.tipo === 'ingreso';
         if (rol === 'Usuario_Egresos') return r.tipo === 'egreso';
         return false;
@@ -247,6 +248,7 @@ export function exportarXLSX(datos: DatosExportacion, rol: string, descargar: bo
       const registros = datos.registrosPorFolder[folder.id] || [];
       const filtrados = registros.filter(r => {
         if (rol === 'Dueño') return true;
+        if (rol === 'Usuario_Completo') return true;
         if (rol === 'Usuario_Ingresos') return r.tipo === 'ingreso';
         if (rol === 'Usuario_Egresos') return r.tipo === 'egreso';
         return false;

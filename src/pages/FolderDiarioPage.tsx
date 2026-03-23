@@ -4,8 +4,10 @@ import { FormularioRegistro } from '../components/FormularioRegistro';
 import { ListaRegistros } from '../components/ListaRegistros';
 import { useFolderStore } from '../stores/folderStore';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../lib/supabase';
 import { obtenerFechaLaboral, obtenerNombreDia, formatearFecha } from '../utils/fechaLaboral';
-import type { FolderDiario } from '../types';
+import { exportarPDF, exportarXLSX } from '../utils/exportador';
+import type { FolderDiario, Registro } from '../types';
 
 function esDomingo(): boolean {
   return new Date().getDay() === 0;
@@ -94,6 +96,8 @@ export function FolderDiarioPage() {
             folderActual={folderActual}
             fechaLaboralHoy={fechaLaboralHoy}
             onSeleccionar={handleSeleccionarFolder}
+            rol={perfil?.rol || ''}
+            empresaId={perfil?.empresa_id}
           />
         </div>
       </Layout>
@@ -173,26 +177,26 @@ export function FolderDiarioPage() {
               </div>
 
               {/* Totales */}
-              <div className="grid grid-cols-3 gap-3 mt-4">
-                <div className="p-3 bg-green-50 rounded-lg text-center">
-                  <p className="text-xs text-green-600 font-medium">Ingresos</p>
-                  <p className="text-xl font-bold text-green-700">
+              <div className="grid grid-cols-3 gap-2 mt-4">
+                <div className="p-2 bg-green-50 rounded-lg text-center min-w-0">
+                  <p className="text-xs text-green-600 font-medium truncate">Ingresos</p>
+                  <p className="text-sm sm:text-lg font-bold text-green-700 truncate">
                     ${folderActual.total_ingresos?.toFixed(2) || '0.00'}
                   </p>
                 </div>
-                <div className="p-3 bg-red-50 rounded-lg text-center">
-                  <p className="text-xs text-red-600 font-medium">Egresos</p>
-                  <p className="text-xl font-bold text-red-700">
+                <div className="p-2 bg-red-50 rounded-lg text-center min-w-0">
+                  <p className="text-xs text-red-600 font-medium truncate">Egresos</p>
+                  <p className="text-sm sm:text-lg font-bold text-red-700 truncate">
                     ${folderActual.total_egresos?.toFixed(2) || '0.00'}
                   </p>
                 </div>
-                <div className={`p-3 rounded-lg text-center ${
+                <div className={`p-2 rounded-lg text-center min-w-0 ${
                   (folderActual.balance_diario || 0) >= 0 ? 'bg-blue-50' : 'bg-orange-50'
                 }`}>
-                  <p className={`text-xs font-medium ${
+                  <p className={`text-xs font-medium truncate ${
                     (folderActual.balance_diario || 0) >= 0 ? 'text-blue-600' : 'text-orange-600'
                   }`}>Balance</p>
-                  <p className={`text-xl font-bold ${
+                  <p className={`text-sm sm:text-lg font-bold truncate ${
                     (folderActual.balance_diario || 0) >= 0 ? 'text-blue-700' : 'text-orange-700'
                   }`}>
                     ${folderActual.balance_diario?.toFixed(2) || '0.00'}
@@ -268,9 +272,13 @@ interface HistorialProps {
   folderActual: FolderDiario | null;
   fechaLaboralHoy: string;
   onSeleccionar: (f: FolderDiario) => void;
+  rol: string;
+  empresaId?: string;
 }
 
-function HistorialFolders({ folders, folderActual, fechaLaboralHoy, onSeleccionar }: HistorialProps) {
+function HistorialFolders({ folders, folderActual, fechaLaboralHoy, onSeleccionar, rol, empresaId }: HistorialProps) {
+  const [exportandoId, setExportandoId] = useState<string | null>(null);
+
   // Excluir domingos (artefactos del código anterior)
   const foldersFiltrados = folders.filter(f => {
     const dia = new Date(f.fecha_laboral + 'T12:00:00').getDay();
@@ -278,6 +286,52 @@ function HistorialFolders({ folders, folderActual, fechaLaboralHoy, onSelecciona
   });
 
   if (foldersFiltrados.length === 0) return null;
+
+  const exportarFolder = async (folder: FolderDiario, formato: 'pdf' | 'xlsx') => {
+    setExportandoId(folder.id + formato);
+    try {
+      // Cargar semana
+      const { data: semana, error: semanaErr } = await supabase
+        .from('semanas_laborales')
+        .select('*')
+        .eq('id', folder.semana_laboral_id)
+        .single();
+      if (semanaErr) throw semanaErr;
+
+      // Cargar registros del folder
+      const { data: registrosData, error: regErr } = await supabase
+        .from('registros')
+        .select('*')
+        .eq('folder_diario_id', folder.id)
+        .order('created_at', { ascending: true });
+      if (regErr) throw regErr;
+      const registrosPorFolder: Record<string, Registro[]> = {
+        [folder.id]: registrosData || [],
+      };
+
+      // Nombre empresa
+      let nombreEmpresa: string | undefined;
+      if (empresaId) {
+        const { data: emp } = await supabase
+          .from('empresas')
+          .select('nombre')
+          .eq('id', empresaId)
+          .single();
+        nombreEmpresa = emp?.nombre;
+      }
+
+      const datos = { semana, folders: [folder], registrosPorFolder, nombreEmpresa };
+      if (formato === 'pdf') {
+        exportarPDF(datos, rol);
+      } else {
+        exportarXLSX(datos, rol);
+      }
+    } catch (err: any) {
+      alert(`Error al exportar: ${err.message}`);
+    } finally {
+      setExportandoId(null);
+    }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow p-5">
@@ -287,51 +341,76 @@ function HistorialFolders({ folders, folderActual, fechaLaboralHoy, onSelecciona
           const esActivo = folderActual?.id === folder.id;
           const esHoy = folder.fecha_laboral === fechaLaboralHoy;
           return (
-            <button
+            <div
               key={folder.id}
-              onClick={() => onSeleccionar(folder)}
-              className={`w-full text-left p-3 rounded-lg border transition-colors ${
+              className={`p-3 rounded-lg border transition-colors ${
                 esActivo
                   ? 'border-indigo-400 bg-indigo-50'
-                  : 'border-gray-200 hover:bg-gray-50'
+                  : 'border-gray-200'
               }`}
             >
-              <div className="flex justify-between items-center flex-wrap gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-gray-900 capitalize text-sm">
-                    {obtenerNombreDia(folder.fecha_laboral)}
-                  </span>
-                  <span className="text-xs text-gray-500">{folder.fecha_laboral}</span>
-                  {esHoy && (
-                    <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded font-medium">
-                      Hoy
+              <div className="flex justify-between items-start flex-wrap gap-2">
+                {/* Info del folder — clickeable */}
+                <button
+                  className="text-left flex-1 min-w-0"
+                  onClick={() => onSeleccionar(folder)}
+                >
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-gray-900 capitalize text-sm">
+                      {obtenerNombreDia(folder.fecha_laboral)}
                     </span>
-                  )}
-                  {folder.cerrado ? (
-                    <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
-                      🔒 Cerrado
+                    <span className="text-xs text-gray-500">{folder.fecha_laboral}</span>
+                    {esHoy && (
+                      <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded font-medium">
+                        Hoy
+                      </span>
+                    )}
+                    {folder.cerrado ? (
+                      <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+                        🔒 Cerrado
+                      </span>
+                    ) : (
+                      <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded">
+                        Abierto
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-4 text-xs font-medium mt-1">
+                    <span className="text-green-700">
+                      +${folder.total_ingresos?.toFixed(2) || '0.00'}
                     </span>
-                  ) : (
-                    <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded">
-                      Abierto
+                    <span className="text-red-700">
+                      -${folder.total_egresos?.toFixed(2) || '0.00'}
                     </span>
-                  )}
-                </div>
-                <div className="flex gap-4 text-xs font-medium">
-                  <span className="text-green-700">
-                    +${folder.total_ingresos?.toFixed(2) || '0.00'}
-                  </span>
-                  <span className="text-red-700">
-                    -${folder.total_egresos?.toFixed(2) || '0.00'}
-                  </span>
-                  <span className={`font-bold ${
-                    (folder.balance_diario || 0) >= 0 ? 'text-blue-700' : 'text-orange-700'
-                  }`}>
-                    =${folder.balance_diario?.toFixed(2) || '0.00'}
-                  </span>
+                    <span className={`font-bold ${
+                      (folder.balance_diario || 0) >= 0 ? 'text-blue-700' : 'text-orange-700'
+                    }`}>
+                      =${folder.balance_diario?.toFixed(2) || '0.00'}
+                    </span>
+                  </div>
+                </button>
+
+                {/* Botones exportar */}
+                <div className="flex gap-1 shrink-0">
+                  <button
+                    onClick={() => exportarFolder(folder, 'pdf')}
+                    disabled={exportandoId !== null}
+                    title="Exportar PDF"
+                    className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {exportandoId === folder.id + 'pdf' ? '...' : 'PDF'}
+                  </button>
+                  <button
+                    onClick={() => exportarFolder(folder, 'xlsx')}
+                    disabled={exportandoId !== null}
+                    title="Exportar XLSX"
+                    className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {exportandoId === folder.id + 'xlsx' ? '...' : 'XLSX'}
+                  </button>
                 </div>
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
