@@ -13,14 +13,17 @@ interface FolderState {
   folderActual: FolderDiario | null;
   semanaActual: SemanaLaboral | null;
   folders: FolderDiario[];
+  foldersRecientes: FolderDiario[];
   loading: boolean;
   error: string | null;
-  
+
   // Acciones
   obtenerOCrearFolderActual: () => Promise<FolderDiario | null>;
   obtenerOCrearSemanaActual: (fecha?: Date) => Promise<SemanaLaboral | null>;
   cerrarFolder: (folderId: string) => Promise<void>;
   cargarFoldersSemana: (semanaId: string) => Promise<void>;
+  cargarFoldersRecientes: () => Promise<void>;
+  seleccionarFolder: (folder: FolderDiario) => void;
   refrescarFolderActual: () => Promise<void>;
 }
 
@@ -28,6 +31,7 @@ export const useFolderStore = create<FolderState>((set, get) => ({
   folderActual: null,
   semanaActual: null,
   folders: [],
+  foldersRecientes: [],
   loading: false,
   error: null,
 
@@ -193,6 +197,27 @@ export const useFolderStore = create<FolderState>((set, get) => ({
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }
+  },
+
+  cargarFoldersRecientes: async () => {
+    try {
+      const empresaId = getEmpresaId();
+      let q = supabase
+        .from('folders_diarios')
+        .select('*')
+        .order('fecha_laboral', { ascending: false })
+        .limit(30);
+      if (empresaId) q = q.eq('empresa_id', empresaId);
+      const { data, error } = await q;
+      if (error) throw error;
+      set({ foldersRecientes: data || [] });
+    } catch (error: any) {
+      console.error('Error al cargar folders recientes:', error);
+    }
+  },
+
+  seleccionarFolder: (folder: FolderDiario) => {
+    set({ folderActual: folder });
   },
 
   refrescarFolderActual: async () => {
