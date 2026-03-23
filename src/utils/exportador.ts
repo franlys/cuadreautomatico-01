@@ -95,25 +95,33 @@ export function exportarPDF(datos: DatosExportacion, rol: string, descargar: boo
       return a.created_at.localeCompare(b.created_at);
     });
 
-    // Calcular saldo acumulado
-    let saldoAcumulado = 0;
+    // Calcular totales
+    let totalIngreso = 0;
+    let totalEgreso = 0;
     for (const r of registrosConsolidados) {
-      if (r.tipo === 'ingreso') saldoAcumulado += r.monto;
-      else saldoAcumulado -= r.monto;
-      r.saldoAcumulado = saldoAcumulado;
+      if (r.tipo === 'ingreso') totalIngreso += r.monto;
+      else totalEgreso += r.monto;
     }
+    const saldoFinal = totalIngreso - totalEgreso;
 
-    // Tabla única de registros
-    const tiposFilas: Array<'ingreso' | 'egreso'> = registrosConsolidados.map(r => r.tipo);
-    const tablaData = registrosConsolidados.map(r => [
-      fechaCorta(r.fecha),
-      r.tipo === 'ingreso'
-        ? [r.empleado, r.ruta].filter(Boolean).join(' - ')
-        : r.concepto || '',
-      r.tipo === 'ingreso' ? r.monto.toFixed(2) : '',
-      r.tipo === 'egreso' ? r.monto.toFixed(2) : '',
-      r.saldoAcumulado.toFixed(2),
-    ]);
+    // Tabla única de registros (sin saldo por fila)
+    const tiposFilas: Array<'ingreso' | 'egreso' | 'total'> = [
+      ...registrosConsolidados.map(r => r.tipo),
+      'total',
+    ];
+    const tablaData = [
+      ...registrosConsolidados.map(r => [
+        fechaCorta(r.fecha),
+        r.tipo === 'ingreso'
+          ? [r.empleado, r.ruta].filter(Boolean).join(' - ')
+          : r.concepto || '',
+        r.tipo === 'ingreso' ? r.monto.toFixed(2) : '',
+        r.tipo === 'egreso' ? r.monto.toFixed(2) : '',
+        '',
+      ]),
+      // Fila total
+      ['', 'TOTAL', totalIngreso.toFixed(2), totalEgreso.toFixed(2), saldoFinal.toFixed(2)],
+    ];
 
     autoTable(doc, {
       startY: yPos,
@@ -131,7 +139,10 @@ export function exportarPDF(datos: DatosExportacion, rol: string, descargar: boo
       didParseCell: (data) => {
         if (data.section === 'body') {
           const tipo = tiposFilas[data.row.index];
-          if (tipo === 'ingreso') {
+          if (tipo === 'total') {
+            data.cell.styles.fillColor = [220, 220, 220];
+            data.cell.styles.fontStyle = 'bold';
+          } else if (tipo === 'ingreso') {
             data.cell.styles.fillColor = [255, 255, 0];
           } else {
             data.cell.styles.fillColor = [255, 255, 255];
@@ -257,11 +268,13 @@ export function exportarXLSX(datos: DatosExportacion, rol: string, descargar: bo
       const d = a.fecha.localeCompare(b.fecha);
       return d !== 0 ? d : a.created_at.localeCompare(b.created_at);
     });
-    let saldoAcc = 0;
+    let totalIngresoXLSX = 0;
+    let totalEgresoXLSX = 0;
     for (const r of consolidados) {
-      saldoAcc += r.tipo === 'ingreso' ? r.monto : -r.monto;
-      r.saldo = saldoAcc;
+      if (r.tipo === 'ingreso') totalIngresoXLSX += r.monto;
+      else totalEgresoXLSX += r.monto;
     }
+    const saldoFinalXLSX = totalIngresoXLSX - totalEgresoXLSX;
 
     // ── Hoja principal: Registros ─────────────────────────────────────────
     const nombreEmpresa = datos.nombreEmpresa || 'Reporte Semanal';
@@ -292,9 +305,11 @@ export function exportarXLSX(datos: DatosExportacion, rol: string, descargar: bo
         r.descripcion,
         r.tipo === 'ingreso' ? r.monto : '',
         r.tipo === 'egreso'  ? r.monto : '',
-        r.saldo,
+        '',
       ]);
     }
+    // Fila TOTAL
+    aoa.push(['', 'TOTAL', totalIngresoXLSX, totalEgresoXLSX, saldoFinalXLSX]);
 
     const wsReg = XLSXStyle.utils.aoa_to_sheet(aoa);
 
@@ -338,6 +353,7 @@ export function exportarXLSX(datos: DatosExportacion, rol: string, descargar: bo
 
     // Estilos: filas de datos
     const COLS = ['A', 'B', 'C', 'D', 'E'];
+    const FILL_GRAY = { patternType: 'solid', fgColor: { rgb: 'DCDCDC' } };
     consolidados.forEach((r, i) => {
       const rowNum = DATOS_START_ROW + 1 + i; // 1-based
       const fill = r.tipo === 'ingreso' ? FILL_YELLOW : FILL_WHITE;
@@ -347,6 +363,18 @@ export function exportarXLSX(datos: DatosExportacion, rol: string, descargar: bo
         const alignment = ci >= 2 ? ALIGN_RIGHT : { vertical: 'center' };
         wsReg[addr].s = { fill, border: borderThin, alignment };
       });
+    });
+    // Estilo fila TOTAL
+    const totalRowNum = DATOS_START_ROW + 1 + consolidados.length;
+    COLS.forEach((col, ci) => {
+      const addr = `${col}${totalRowNum}`;
+      if (!wsReg[addr]) wsReg[addr] = { v: '', t: 's' };
+      wsReg[addr].s = {
+        fill: FILL_GRAY,
+        font: { bold: true },
+        border: borderThin,
+        alignment: ci >= 2 ? ALIGN_RIGHT : { vertical: 'center' },
+      };
     });
 
     XLSXStyle.utils.book_append_sheet(workbook, wsReg, 'Registros');
