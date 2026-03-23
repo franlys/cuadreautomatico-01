@@ -148,21 +148,21 @@ export function ResumenSemanal() {
 
             {/* Totales */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="p-4 bg-green-50 rounded-md">
-                <p className="text-sm text-green-600 font-medium">Total Ingresos</p>
-                <p className="text-xl font-bold text-green-700">
+              <div className="p-4 bg-green-50 rounded-md min-w-0">
+                <p className="text-sm text-green-600 font-medium whitespace-nowrap">Total Ingresos</p>
+                <p className="text-xl font-bold text-green-700 truncate" title={`$${semanaSeleccionada.total_ingresos?.toFixed(2) || '0.00'}`}>
                   ${semanaSeleccionada.total_ingresos?.toFixed(2) || '0.00'}
                 </p>
               </div>
-              <div className="p-4 bg-red-50 rounded-md">
-                <p className="text-sm text-red-600 font-medium">Total Egresos</p>
-                <p className="text-xl font-bold text-red-700">
+              <div className="p-4 bg-red-50 rounded-md min-w-0">
+                <p className="text-sm text-red-600 font-medium whitespace-nowrap">Total Egresos</p>
+                <p className="text-xl font-bold text-red-700 truncate" title={`$${semanaSeleccionada.total_egresos?.toFixed(2) || '0.00'}`}>
                   ${semanaSeleccionada.total_egresos?.toFixed(2) || '0.00'}
                 </p>
               </div>
-              <div className="p-4 bg-blue-50 rounded-md">
-                <p className="text-sm text-blue-600 font-medium">Balance Neto</p>
-                <p className="text-xl font-bold text-blue-700">
+              <div className="p-4 bg-blue-50 rounded-md min-w-0">
+                <p className="text-sm text-blue-600 font-medium whitespace-nowrap">Balance Neto</p>
+                <p className="text-xl font-bold text-blue-700 truncate" title={`$${semanaSeleccionada.balance_neto?.toFixed(2) || '0.00'}`}>
                   ${semanaSeleccionada.balance_neto?.toFixed(2) || '0.00'}
                 </p>
               </div>

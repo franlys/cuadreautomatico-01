@@ -87,30 +87,30 @@ export function SemanaLaboral() {
 
       {/* Resumen semanal */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="p-4 bg-green-50 rounded-md">
-          <p className="text-sm text-green-600 font-medium">Total Ingresos</p>
-          <p className="text-xl font-bold text-green-700">
+        <div className="p-4 bg-green-50 rounded-md min-w-0">
+          <p className="text-sm text-green-600 font-medium whitespace-nowrap">Total Ingresos</p>
+          <p className="text-xl font-bold text-green-700 truncate" title={`$${semanaActual.total_ingresos?.toFixed(2) || '0.00'}`}>
             ${semanaActual.total_ingresos?.toFixed(2) || '0.00'}
           </p>
         </div>
         
-        <div className="p-4 bg-red-50 rounded-md">
-          <p className="text-sm text-red-600 font-medium">Total Egresos</p>
-          <p className="text-xl font-bold text-red-700">
+        <div className="p-4 bg-red-50 rounded-md min-w-0">
+          <p className="text-sm text-red-600 font-medium whitespace-nowrap">Total Egresos</p>
+          <p className="text-xl font-bold text-red-700 truncate" title={`$${semanaActual.total_egresos?.toFixed(2) || '0.00'}`}>
             ${semanaActual.total_egresos?.toFixed(2) || '0.00'}
           </p>
         </div>
         
-        <div className={`p-4 rounded-md ${obtenerColorBalance(semanaActual.balance_neto || 0)}`}>
-          <p className="text-sm font-medium">Balance Neto</p>
-          <p className="text-xl font-bold">
+        <div className={`p-4 rounded-md min-w-0 ${obtenerColorBalance(semanaActual.balance_neto || 0)}`}>
+          <p className="text-sm font-medium whitespace-nowrap">Balance Neto</p>
+          <p className="text-xl font-bold truncate" title={`$${semanaActual.balance_neto?.toFixed(2) || '0.00'}`}>
             ${semanaActual.balance_neto?.toFixed(2) || '0.00'}
           </p>
         </div>
 
-        <div className="p-4 bg-purple-50 rounded-md">
-          <p className="text-sm text-purple-600 font-medium">Saldo Disponible</p>
-          <p className="text-xl font-bold text-purple-700">
+        <div className="p-4 bg-purple-50 rounded-md min-w-0">
+          <p className="text-sm text-purple-600 font-medium whitespace-nowrap">Saldo Disponible</p>
+          <p className="text-xl font-bold text-purple-700 truncate" title={`$${semanaActual.saldo_disponible?.toFixed(2) || '0.00'}`}>
             ${semanaActual.saldo_disponible?.toFixed(2) || '0.00'}
           </p>
         </div>
@@ -151,28 +151,28 @@ export function SemanaLaboral() {
                       )}
                     </div>
                     
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-600">Ingresos</p>
-                        <p className="font-semibold text-green-700">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-4 text-sm mt-2 sm:mt-0">
+                      <div className="min-w-0">
+                        <p className="text-gray-600 text-xs sm:text-sm">Ing</p>
+                        <p className="font-semibold text-green-700 truncate" title={`$${folder.total_ingresos?.toFixed(2) || '0.00'}`}>
                           ${folder.total_ingresos?.toFixed(2) || '0.00'}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-gray-600">Egresos</p>
-                        <p className="font-semibold text-red-700">
+                      <div className="min-w-0">
+                        <p className="text-gray-600 text-xs sm:text-sm">Egr</p>
+                        <p className="font-semibold text-red-700 truncate" title={`$${folder.total_egresos?.toFixed(2) || '0.00'}`}>
                           ${folder.total_egresos?.toFixed(2) || '0.00'}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-gray-600">Balance</p>
-                        <p className={`font-semibold ${
+                      <div className="min-w-0">
+                        <p className="text-gray-600 text-xs sm:text-sm">Bal</p>
+                        <p className={`font-semibold truncate ${
                           (folder.balance_diario || 0) > 0
                             ? 'text-blue-700'
                             : (folder.balance_diario || 0) < 0
                             ? 'text-orange-700'
                             : 'text-gray-700'
-                        }`}>
+                        }`} title={`$${folder.balance_diario?.toFixed(2) || '0.00'}`}>
                           ${folder.balance_diario?.toFixed(2) || '0.00'}
                         </p>
                       </div>

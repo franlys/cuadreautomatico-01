@@ -154,8 +154,8 @@ export function exportarPDF(datos: DatosExportacion, rol: string, descargar: boo
 
     yPos = (doc as any).lastAutoTable.finalY + 10;
     
-    // Depósitos (solo para Dueño)
-    if (rol === 'Dueño' && datos.depositos && datos.depositos.length > 0) {
+    // Depósitos (para Dueño y Usuario_Completo)
+    if ((rol === 'Dueño' || rol === 'Usuario_Completo') && datos.depositos && datos.depositos.length > 0) {
       if (yPos > 220) {
         doc.addPage();
         yPos = 20;
@@ -272,11 +272,17 @@ export function exportarXLSX(datos: DatosExportacion, rol: string, descargar: bo
     });
     let totalIngresoXLSX = 0;
     let totalEgresoXLSX = 0;
+    let saldoAcumuladoXLSX = 0;
     for (const r of consolidados) {
-      if (r.tipo === 'ingreso') totalIngresoXLSX += r.monto;
-      else totalEgresoXLSX += r.monto;
+      if (r.tipo === 'ingreso') {
+        totalIngresoXLSX += r.monto;
+        saldoAcumuladoXLSX += r.monto;
+      } else {
+        totalEgresoXLSX += r.monto;
+        saldoAcumuladoXLSX -= r.monto;
+      }
+      r.saldo = saldoAcumuladoXLSX;
     }
-    const saldoFinalXLSX = totalIngresoXLSX - totalEgresoXLSX;
 
     // ── Hoja principal: Registros ─────────────────────────────────────────
     const nombreEmpresa = datos.nombreEmpresa || 'Reporte Semanal';
@@ -307,11 +313,11 @@ export function exportarXLSX(datos: DatosExportacion, rol: string, descargar: bo
         r.descripcion,
         r.tipo === 'ingreso' ? r.monto : '',
         r.tipo === 'egreso'  ? r.monto : '',
-        '',
+        r.saldo,
       ]);
     }
     // Fila TOTAL
-    aoa.push(['', 'TOTAL', totalIngresoXLSX, totalEgresoXLSX, saldoFinalXLSX]);
+    aoa.push(['', 'TOTAL', totalIngresoXLSX, totalEgresoXLSX, saldoAcumuladoXLSX]);
 
     const wsReg = XLSXStyle.utils.aoa_to_sheet(aoa);
 
@@ -358,12 +364,19 @@ export function exportarXLSX(datos: DatosExportacion, rol: string, descargar: bo
     const FILL_GRAY = { patternType: 'solid', fgColor: { rgb: 'DCDCDC' } };
     consolidados.forEach((r, i) => {
       const rowNum = DATOS_START_ROW + 1 + i; // 1-based
-      const fill = r.tipo === 'ingreso' ? FILL_YELLOW : FILL_WHITE;
       COLS.forEach((col, ci) => {
         const addr = `${col}${rowNum}`;
         if (!wsReg[addr]) wsReg[addr] = { v: '', t: 's' };
+        
+        // Asignar formato de contabilidad a números
+        if (ci >= 2 && typeof wsReg[addr].v === 'number') {
+          wsReg[addr].z = '#,##0.00;[Red](#,##0.00)';
+        }
+
         const alignment = ci >= 2 ? ALIGN_RIGHT : { vertical: 'center' };
-        wsReg[addr].s = { fill, border: borderThin, alignment };
+        const cellFill = (r.tipo === 'ingreso' && ci <= 2) ? FILL_YELLOW : FILL_WHITE;
+        
+        wsReg[addr].s = { fill: cellFill, border: borderThin, alignment };
       });
     });
     // Estilo fila TOTAL
@@ -371,6 +384,12 @@ export function exportarXLSX(datos: DatosExportacion, rol: string, descargar: bo
     COLS.forEach((col, ci) => {
       const addr = `${col}${totalRowNum}`;
       if (!wsReg[addr]) wsReg[addr] = { v: '', t: 's' };
+      
+      // Asignar formato de contabilidad a los totales
+      if (ci >= 2 && typeof wsReg[addr].v === 'number') {
+        wsReg[addr].z = '#,##0.00;[Red](#,##0.00)';
+      }
+
       wsReg[addr].s = {
         fill: FILL_GRAY,
         font: { bold: true },
@@ -381,8 +400,8 @@ export function exportarXLSX(datos: DatosExportacion, rol: string, descargar: bo
 
     XLSXStyle.utils.book_append_sheet(workbook, wsReg, 'Registros');
 
-    // ── Hoja Depósitos (solo Dueño) ───────────────────────────────────────
-    if (rol === 'Dueño' && datos.depositos && datos.depositos.length > 0) {
+    // ── Hoja Depósitos (para Dueño y Usuario_Completo) ────────────────────
+    if ((rol === 'Dueño' || rol === 'Usuario_Completo') && datos.depositos && datos.depositos.length > 0) {
       const depositosData: any[][] = [['Fecha', 'Banco', 'Nota', 'Monto']];
       for (const d of datos.depositos) {
         depositosData.push([d.fecha_deposito, d.banco || 'N/A', d.nota || '', d.monto.toFixed(2)]);

@@ -51,9 +51,9 @@ export function BotonesExportacion({ semana, folders: foldersProps }: BotonesExp
         }
       }
 
-      // Cargar depósitos (solo para Dueño)
+      // Cargar depósitos (para Dueño y Usuario_Completo)
       let depositos = undefined;
-      if (perfil?.rol === 'Dueño') {
+      if (perfil?.rol === 'Dueño' || perfil?.rol === 'Usuario_Completo') {
         const { data: depositosData, error: depositosError } = await supabase
           .from('depositos')
           .select('monto, fecha_deposito, banco, nota')
@@ -166,7 +166,7 @@ export function BotonesExportacion({ semana, folders: foldersProps }: BotonesExp
       </div>
 
       <p className="text-xs text-gray-600 text-center">
-        {perfil?.rol === 'Dueño' 
+        {perfil?.rol === 'Dueño' || perfil?.rol === 'Usuario_Completo'
           ? 'Exportarás todos los registros y depósitos'
           : perfil?.rol === 'Usuario_Ingresos'
           ? 'Exportarás solo los ingresos'

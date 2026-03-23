@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add src/components/BotonesExportacion.tsx src/utils/exportador.ts)",
+      "Bash(git push origin main)",
+      "Bash(npm install @xlsx-js-style)",
+      "Bash(npm.cmd install @xlsx-js-style)",
+      "Bash(cmd.exe /c \"cd c:\\\\Users\\\\elmae\\\\cuadreautomatico-01 && npm install @xlsx-js-style\")",
+      "Bash(/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -Command \"cd ''c:\\\\Users\\\\elmae\\\\cuadreautomatico-01''; npm install @xlsx-js-style\")",
+      "Read(//usr/local/bin/**)",
+      "Bash(find /usr -name \"npm\")",
+      "Bash(/c/Users/elmae/AppData/Local/nvm/v22.18.0/npm.cmd install @xlsx-js-style)",
+      "Bash(/c/Users/elmae/AppData/Local/nvm/v22.18.0/npm.cmd install xlsx-js-style)",
+      "Bash(/c/Users/elmae/AppData/Local/nvm/v22.18.0/node_modules/npm/bin/npm-cli.js exec -- tsc --noEmit)",
+      "Bash(/c/Users/elmae/AppData/Local/nvm/v22.18.0/npx.cmd tsc --noEmit)",
+      "Bash(/c/Users/elmae/AppData/Local/nvm/v22.18.0/node.exe /c/Users/elmae/cuadreautomatico-01/node_modules/.bin/tsc --noEmit)",
+      "Bash(/c/Users/elmae/AppData/Local/nvm/v22.18.0/node.exe /c/Users/elmae/cuadreautomatico-01/node_modules/typescript/bin/tsc --noEmit --project /c/Users/elmae/cuadreautomatico-01/tsconfig.json)",
+      "Bash(git add src/utils/exportador.ts package.json package-lock.json)",
+      "Bash(git add src/utils/exportador.ts vite.config.ts)",
+      "Bash(git add src/components/BotonesExportacion.tsx src/pages/ResumenSemanal.tsx)",
+      "Bash(ls /c/Users/elmae/cuadreautomatico-01/supabase/*.sql)",
+      "Bash(git add src/stores/folderStore.ts supabase/fix-rls-folders-semanas.sql)",
+      "Bash(git add src/utils/exportador.ts)",
+      "Bash(git add src/pages/ResumenSemanal.tsx)",
+      "Bash(npx tsc --noEmit)"
+    ]
+  }
+}
