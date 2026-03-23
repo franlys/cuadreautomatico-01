@@ -260,6 +260,8 @@ export function FolderDiarioPage() {
           folderActual={folderActual}
           fechaLaboralHoy={fechaLaboralHoy}
           onSeleccionar={handleSeleccionarFolder}
+          rol={perfil?.rol || ''}
+          empresaId={perfil?.empresa_id}
         />
       </div>
     </Layout>
